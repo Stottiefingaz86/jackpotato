@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useRef, useSyncExternalStore } from "react";
 import type { RealtimeEvent } from "@/lib/types";
 
 export interface JackpotStreamSnapshot {
@@ -30,10 +30,8 @@ const initialSnapshot: JackpotStreamSnapshot = {
 /**
  * Shared, reference-counted SSE singleton.
  *
- * Previous impl created one EventSource per `useJackpotStream()` call, which
- * meant a page with 4-5 live widgets would blow through Chrome's 6-per-origin
- * connection limit and starve out HMR / page fetches. This module keeps one
- * connection per browser tab and fans events out to every subscriber.
+ * One EventSource per tab, shared by every subscriber. Prevents widgets from
+ * blowing through Chrome's 6-per-origin connection cap.
  */
 type Subscriber = () => void;
 
@@ -62,10 +60,33 @@ function emit() {
   for (const s of store.subscribers) s();
 }
 
+/**
+ * The simulator fires 25-70 events per second, which would cause React to
+ * re-render live widgets ~50x per second. We coalesce the intermediate
+ * snapshots so the UI only sees one update per animation frame (~60Hz max).
+ *
+ * `store.snapshot` is still mutated synchronously so slice hooks reading the
+ * latest value stay correct; we just defer the subscriber notifications.
+ */
+let flushScheduled = false;
+function scheduleEmit() {
+  if (flushScheduled) return;
+  flushScheduled = true;
+  const run = () => {
+    flushScheduled = false;
+    emit();
+  };
+  if (typeof window !== "undefined" && window.requestAnimationFrame) {
+    window.requestAnimationFrame(run);
+  } else {
+    setTimeout(run, 16);
+  }
+}
+
 function update(updater: (s: JackpotStreamSnapshot) => JackpotStreamSnapshot) {
   const store = getStore();
   store.snapshot = updater(store.snapshot);
-  emit();
+  scheduleEmit();
 }
 
 function handleMessage(msg: MessageEvent<string>) {
@@ -114,7 +135,6 @@ function closeConnection() {
   if (!store.es) return;
   store.es.close();
   store.es = null;
-  // Reset `connected` so widgets show the right status on remount.
   store.snapshot = { ...store.snapshot, connected: false };
   emit();
 }
@@ -127,8 +147,6 @@ function subscribe(cb: Subscriber): () => void {
   return () => {
     store.subscribers.delete(cb);
     store.refCount -= 1;
-    // Defer closing so rapid remounts (StrictMode, nav) don't thrash the
-    // connection. If nothing has resubscribed within a tick, close.
     if (store.refCount <= 0) {
       const currentRef = store.refCount;
       setTimeout(() => {
@@ -149,7 +167,8 @@ function getServerSnapshot(): JackpotStreamSnapshot {
 
 /**
  * Subscribes to /api/stream/jackpots. All calls within a tab share a single
- * underlying EventSource.
+ * underlying EventSource. Re-renders on every SSE event — use the specific
+ * slice hooks below for hot-path components like LiveBalanceCard.
  */
 export function useJackpotStream() {
   const snap = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
@@ -160,4 +179,132 @@ export function useJackpotStream() {
   );
 
   return { ...snap, getTier };
+}
+
+// ---------- Selector slice hooks ----------
+// These subscribe to the same singleton but only cause React re-renders when
+// their specific slice of state changes, not on every SSE tick. Crucial for
+// admin pages that render many live widgets at once.
+
+/**
+ * Subscribe to a derived value of the snapshot. The selector must be a stable
+ * reference (wrapped in useCallback/useMemo) and pure — no mutations. The
+ * `isEqual` function lets us return the cached value when the new slice is
+ * shallow-equal to the previous one, avoiding the "new object every tick"
+ * trap that would otherwise defeat React's bailout.
+ */
+function useSlice<T>(
+  selector: (s: JackpotStreamSnapshot) => T,
+  isEqual: (a: T, b: T) => boolean = Object.is
+): T {
+  // Client snapshot cache — keyed by the snapshot reference so we only
+  // recompute the slice when the underlying store actually ticked.
+  const clientCacheRef = useRef<{
+    snap: JackpotStreamSnapshot | null;
+    value: T;
+  } | null>(null);
+
+  // Server snapshot cache — computed lazily, reused forever. React requires
+  // getServerSnapshot to return a stable reference across calls.
+  const serverCacheRef = useRef<{ value: T } | null>(null);
+
+  const getSliceSnapshot = useCallback((): T => {
+    const snap = getStore().snapshot;
+    let cache = clientCacheRef.current;
+    if (cache === null) {
+      cache = { snap, value: selector(snap) };
+      clientCacheRef.current = cache;
+      return cache.value;
+    }
+    if (cache.snap === snap) return cache.value;
+    const next = selector(snap);
+    if (isEqual(cache.value, next)) {
+      cache.snap = snap;
+      return cache.value;
+    }
+    cache.snap = snap;
+    cache.value = next;
+    return next;
+  }, [selector, isEqual]);
+
+  const getServerSliceSnapshot = useCallback((): T => {
+    if (serverCacheRef.current === null) {
+      serverCacheRef.current = { value: selector(initialSnapshot) };
+    }
+    return serverCacheRef.current.value;
+  }, [selector]);
+
+  return useSyncExternalStore(subscribe, getSliceSnapshot, getServerSliceSnapshot);
+}
+
+/** Join a stable string key for a list of tier ids so we can dep-memo cheaply. */
+function joinIds(ids: readonly string[]): string {
+  return [...ids].sort().join("|");
+}
+
+/** Current amounts for the specified tier IDs. Stable ref while values match. */
+export function useJackpotTiers(
+  tierIds: readonly string[]
+): Record<string, number | undefined> {
+  const key = useMemo(() => joinIds(tierIds), [tierIds]);
+  const idList = useMemo(() => (key ? key.split("|") : []), [key]);
+
+  const selector = useCallback(
+    (s: JackpotStreamSnapshot) => {
+      const out: Record<string, number | undefined> = {};
+      for (const id of idList) out[id] = s.tiers[id];
+      return out;
+    },
+    [idList]
+  );
+
+  const isEqual = useCallback(
+    (
+      a: Record<string, number | undefined>,
+      b: Record<string, number | undefined>
+    ) => {
+      for (const id of idList) if (a[id] !== b[id]) return false;
+      return true;
+    },
+    [idList]
+  );
+
+  return useSlice(selector, isEqual);
+}
+
+/** Most recent `jackpot.won` event for a given campaign + tier set. */
+export function useJackpotLatestWin(
+  campaignId: string,
+  tierIds: readonly string[]
+): Extract<RealtimeEvent, { type: "jackpot.won" }> | undefined {
+  const key = useMemo(() => joinIds(tierIds), [tierIds]);
+  const idSet = useMemo(() => new Set(key ? key.split("|") : []), [key]);
+
+  const selector = useCallback(
+    (s: JackpotStreamSnapshot) =>
+      s.recentWins.find(
+        (w) => w.campaignId === campaignId && idSet.has(w.tierId)
+      ),
+    [campaignId, idSet]
+  );
+
+  // Compare by timestamp+tierId so we don't re-render on unrelated wins.
+  const isEqual = useCallback(
+    (
+      a: Extract<RealtimeEvent, { type: "jackpot.won" }> | undefined,
+      b: Extract<RealtimeEvent, { type: "jackpot.won" }> | undefined
+    ) => {
+      if (a === b) return true;
+      if (!a || !b) return false;
+      return a.timestamp === b.timestamp && a.tierId === b.tierId;
+    },
+    []
+  );
+
+  return useSlice(selector, isEqual);
+}
+
+export function useJackpotConnected(): boolean {
+  const selector = useCallback((s: JackpotStreamSnapshot) => s.connected, []);
+  return useSlice(selector);
 }

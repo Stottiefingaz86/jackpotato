@@ -18,6 +18,7 @@ import { ShineSweep } from "@/components/effects/shine-sweep";
 import { cn } from "@/lib/utils";
 import type {
   Crate,
+  CrateArtVariant,
   CratePrize,
   CratePrizeType,
   CrateRarity,
@@ -81,6 +82,12 @@ export interface CrateCardProps {
   onOpened?: (prize: CratePrize) => void;
   /** Compact layout with no prize-pool breakdown. */
   compact?: boolean;
+  /**
+   * When true, skip the /api call and roll a prize from the local weights.
+   * Used by the admin crate editor preview so operators can feel the open
+   * flow before saving a crate to the store.
+   */
+  localSimulation?: boolean;
 }
 
 export function CrateCard({
@@ -89,6 +96,7 @@ export function CrateCard({
   unlocked = true,
   onOpened,
   compact = false,
+  localSimulation = false,
 }: CrateCardProps) {
   const rarity = RARITY[crate.rarity];
   const color = crate.color ?? rarity.ring;
@@ -97,9 +105,36 @@ export function CrateCard({
   const [prize, setPrize] = useState<CratePrize | null>(null);
   const [, startTransition] = useTransition();
 
+  function pickLocalPrize(): CratePrize | null {
+    if (crate.prizes.length === 0) return null;
+    const total = crate.prizes.reduce((s, p) => s + p.weight, 0);
+    if (total <= 0) return crate.prizes[0];
+    let roll = Math.random() * total;
+    for (const p of crate.prizes) {
+      roll -= p.weight;
+      if (roll <= 0) return p;
+    }
+    return crate.prizes[crate.prizes.length - 1];
+  }
+
   function open() {
     if (state !== "idle" || !unlocked) return;
     setState("opening");
+    if (localSimulation) {
+      // Editor preview: roll the dice client-side so the operator doesn't
+      // need to save a crate to feel the open flow.
+      const picked = pickLocalPrize();
+      window.setTimeout(() => {
+        if (picked) {
+          setPrize(picked);
+          setState("opened");
+          onOpened?.(picked);
+        } else {
+          setState("idle");
+        }
+      }, 900);
+      return;
+    }
     startTransition(async () => {
       try {
         const res = await fetch(`/api/crates/${crate.id}/open`, {
@@ -143,9 +178,13 @@ export function CrateCard({
       )}
       style={{
         borderColor: `${color}33`,
+        // Fixed dark card background so rarity colors only appear on the crate
+        // art + CTA + title — NOT the whole card. Using static oklch values
+        // avoids the `oklch(from ...)` relative syntax which rendered the card
+        // transparent in some browsers, causing rarity glow to flood the card.
         background:
-          "linear-gradient(180deg, oklch(from var(--jp-card) l c h / 94%), oklch(from var(--jp-card-2) l c h / 96%))",
-        boxShadow: `0 24px 60px -40px ${color}55, inset 0 1px 0 oklch(1 0 0 / 6%)`,
+          "linear-gradient(180deg, oklch(0.2 0.025 275) 0%, oklch(0.16 0.022 275) 100%)",
+        boxShadow: `0 24px 60px -40px ${color}55, inset 0 1px 0 rgb(255 255 255 / 6%)`,
       }}
     >
       <ShineSweep />
@@ -181,15 +220,26 @@ export function CrateCard({
             from={rarity.from}
             to={rarity.to}
             state={state}
+            variant={crate.artVariant ?? "chest"}
+            imageUrl={crate.artImageUrl}
           />
           <div className="flex flex-col items-center text-center">
+            {/*
+             * Wrap in inline-block + explicit `color: transparent` so the
+             * gradient text clip works in Firefox / Safari as well as
+             * Chromium. Without these two the linear-gradient would render
+             * as a solid color block behind the glyphs on non-WebKit
+             * browsers, which is why the name sometimes appeared as a flat
+             * color bar in the preview panel.
+             */}
             <h3
-              className="font-display text-xl sm:text-2xl font-semibold"
+              className="font-display text-xl sm:text-2xl font-semibold inline-block"
               style={{
                 background: `linear-gradient(90deg, ${rarity.from}, ${rarity.to})`,
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
+                color: "transparent",
               }}
             >
               {crate.name}
@@ -331,22 +381,38 @@ function TriggerPill({
 }
 
 /**
- * CSS-art crate. Has two lid panels that split apart + a golden interior glow
- * when transitioning into the "opening" state.
+ * Per-variant crate art. Every variant shares the same idle / opening /
+ * opened state machine so the surrounding reveal + shower logic doesn't
+ * need to care which preset an operator picked.
  */
-function CrateArt({
+export function CrateArt({
   color,
   from,
   to,
   state,
+  variant = "chest",
+  size = "lg",
+  imageUrl,
 }: {
   color: string;
   from: string;
   to: string;
   state: "idle" | "opening" | "opened";
+  variant?: CrateArtVariant;
+  /** "lg" matches the card (~112px), "sm" is for pickers (~72px). */
+  size?: "lg" | "sm";
+  /** When `variant === "custom"`, the image rendered in place of presets. */
+  imageUrl?: string;
 }) {
   const shake = state === "opening";
   const lidOpen = state === "opening" || state === "opened";
+  const sizeClass = size === "sm" ? "size-16" : "size-28 sm:size-32";
+
+  // Fall back to the default chest if custom variant is selected but no
+  // image has been uploaded yet — avoids an empty box in the picker.
+  const effectiveVariant =
+    variant === "custom" && !imageUrl ? "chest" : variant;
+
   return (
     <motion.div
       animate={
@@ -358,10 +424,10 @@ function CrateArt({
           : { rotate: 0, x: 0 }
       }
       transition={{ duration: 0.8, ease: "easeInOut" }}
-      className="relative size-28 sm:size-32"
-      style={{ filter: `drop-shadow(0 16px 30px ${color}55)` }}
+      className={cn("relative", sizeClass)}
+      style={{ filter: `drop-shadow(0 8px 14px ${color}33)` }}
     >
-      {/* Interior glow */}
+      {/* Shared interior glow sits behind every variant. */}
       <motion.div
         initial={false}
         animate={{
@@ -369,14 +435,94 @@ function CrateArt({
           scale: lidOpen ? 1.6 : 0.9,
         }}
         transition={{ duration: 0.6 }}
-        className="absolute inset-[22%] rounded-full"
+        className="absolute inset-[18%] rounded-full"
         style={{
           background: `radial-gradient(closest-side, ${to}, ${from} 60%, transparent 75%)`,
           filter: "blur(10px)",
         }}
       />
 
-      {/* Body */}
+      {effectiveVariant === "chest" && (
+        <ChestArt from={from} to={to} lidOpen={lidOpen} />
+      )}
+      {effectiveVariant === "orb" && (
+        <OrbArt from={from} to={to} lidOpen={lidOpen} />
+      )}
+      {effectiveVariant === "gem" && (
+        <GemArt from={from} to={to} lidOpen={lidOpen} />
+      )}
+      {effectiveVariant === "card" && (
+        <CardArt from={from} to={to} lidOpen={lidOpen} />
+      )}
+      {effectiveVariant === "vault" && (
+        <VaultArt from={from} to={to} lidOpen={lidOpen} />
+      )}
+      {effectiveVariant === "custom" && imageUrl && (
+        <CustomArt imageUrl={imageUrl} color={color} lidOpen={lidOpen} />
+      )}
+    </motion.div>
+  );
+}
+
+/**
+ * Variant: custom image. Gentle float while idle, scale-up + fade-out
+ * when opening, so the uploaded art plays the same "reveal" beat as
+ * the built-in presets. Works with any aspect ratio — `object-contain`
+ * prevents stretching, a radial glow ring rhymes the art with the rest
+ * of the card.
+ */
+function CustomArt({
+  imageUrl,
+  color,
+  lidOpen,
+}: {
+  imageUrl: string;
+  color: string;
+  lidOpen: boolean;
+}) {
+  return (
+    <motion.div
+      initial={false}
+      animate={
+        lidOpen
+          ? { scale: 1.25, opacity: 0, y: -8 }
+          : { y: [0, -4, 0], opacity: 1, scale: 1 }
+      }
+      transition={
+        lidOpen
+          ? { duration: 0.7, ease: "easeOut" }
+          : { duration: 3.2, repeat: Infinity, ease: "easeInOut" }
+      }
+      className="absolute inset-[6%] grid place-items-center"
+    >
+      <div
+        aria-hidden
+        className="absolute inset-[12%] rounded-full blur-xl opacity-60"
+        style={{ background: `radial-gradient(circle, ${color}88, transparent 70%)` }}
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={imageUrl}
+        alt=""
+        className="relative h-full w-full object-contain"
+        style={{ filter: `drop-shadow(0 6px 10px ${color}55)` }}
+      />
+    </motion.div>
+  );
+}
+
+/* ---- variant: chest (the original two-panel treasure box) ---- */
+function ChestArt({
+  from,
+  to,
+  lidOpen,
+}: {
+  from: string;
+  to: string;
+  lidOpen: boolean;
+}) {
+  return (
+    <>
       <div
         className="absolute inset-x-[8%] bottom-0 top-[38%] rounded-[14px] border"
         style={{
@@ -385,7 +531,6 @@ function CrateArt({
           boxShadow: `inset 0 -8px 20px ${from}66, inset 0 2px 0 ${to}99`,
         }}
       />
-      {/* Body clasp */}
       <div
         className="absolute left-1/2 top-[38%] h-[18%] w-[14%] -translate-x-1/2 rounded-md border"
         style={{
@@ -393,8 +538,6 @@ function CrateArt({
           borderColor: `${to}bb`,
         }}
       />
-
-      {/* Lid left */}
       <motion.div
         initial={false}
         animate={{
@@ -411,7 +554,6 @@ function CrateArt({
         }}
         className="absolute left-[8%] top-[14%] h-[30%] w-[42%] rounded-tl-[14px] rounded-tr-sm border"
       />
-      {/* Lid right */}
       <motion.div
         initial={false}
         animate={{
@@ -428,7 +570,206 @@ function CrateArt({
         }}
         className="absolute right-[8%] top-[14%] h-[30%] w-[42%] rounded-tr-[14px] rounded-tl-sm border"
       />
+    </>
+  );
+}
+
+/* ---- variant: orb (glowing sphere, pulses then shatters outward) ---- */
+function OrbArt({
+  from,
+  to,
+  lidOpen,
+}: {
+  from: string;
+  to: string;
+  lidOpen: boolean;
+}) {
+  return (
+    <>
+      <motion.div
+        initial={false}
+        animate={
+          lidOpen
+            ? { scale: 1.35, opacity: 0 }
+            : { scale: [1, 1.05, 1], opacity: 1 }
+        }
+        transition={
+          lidOpen
+            ? { duration: 0.7 }
+            : { duration: 2.4, repeat: Infinity, ease: "easeInOut" }
+        }
+        className="absolute inset-[14%] rounded-full border"
+        style={{
+          background: `radial-gradient(circle at 30% 28%, ${to}, ${from} 55%, oklch(0.14 0.03 275) 100%)`,
+          borderColor: `${to}aa`,
+          boxShadow: `inset 0 0 30px ${to}66, 0 0 28px ${to}55`,
+        }}
+      />
+      <motion.div
+        initial={false}
+        animate={{ opacity: lidOpen ? 0 : 0.9, scale: lidOpen ? 0.6 : 1 }}
+        transition={{ duration: 0.4 }}
+        className="absolute left-[28%] top-[22%] h-[18%] w-[28%] rounded-full blur-[1px]"
+        style={{ background: "rgb(255 255 255 / 55%)" }}
+      />
+    </>
+  );
+}
+
+/* ---- variant: gem (angular diamond with rotating facets) ---- */
+function GemArt({
+  from,
+  to,
+  lidOpen,
+}: {
+  from: string;
+  to: string;
+  lidOpen: boolean;
+}) {
+  return (
+    <motion.div
+      initial={false}
+      animate={
+        lidOpen
+          ? { rotate: 360, scale: 1.15 }
+          : { rotate: [0, 6, -6, 0], scale: 1 }
+      }
+      transition={
+        lidOpen
+          ? { duration: 1.0, ease: "easeOut" }
+          : { duration: 6, repeat: Infinity, ease: "easeInOut" }
+      }
+      className="absolute inset-[14%]"
+      style={{ transformOrigin: "center" }}
+    >
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `linear-gradient(135deg, ${to} 0%, ${from} 55%, oklch(0.22 0.05 275) 100%)`,
+          clipPath:
+            "polygon(50% 0%, 100% 35%, 80% 100%, 20% 100%, 0% 35%)",
+          filter: `drop-shadow(0 0 16px ${to}88)`,
+        }}
+      />
+      <div
+        className="absolute inset-0 opacity-60"
+        style={{
+          background:
+            "linear-gradient(160deg, rgb(255 255 255 / 55%), transparent 45%)",
+          clipPath: "polygon(50% 0%, 100% 35%, 80% 100%, 20% 100%, 0% 35%)",
+          mixBlendMode: "overlay",
+        }}
+      />
     </motion.div>
+  );
+}
+
+/* ---- variant: card (scratch / tarot card that flips) ---- */
+function CardArt({
+  from,
+  to,
+  lidOpen,
+}: {
+  from: string;
+  to: string;
+  lidOpen: boolean;
+}) {
+  return (
+    <motion.div
+      initial={false}
+      animate={
+        lidOpen
+          ? { rotateY: 180, y: -6 }
+          : { rotateY: [0, -4, 4, 0], y: 0 }
+      }
+      transition={
+        lidOpen
+          ? { duration: 0.8, ease: "easeInOut" }
+          : { duration: 4, repeat: Infinity, ease: "easeInOut" }
+      }
+      className="absolute inset-[18%]"
+      style={{ transformStyle: "preserve-3d", perspective: 800 }}
+    >
+      <div
+        className="absolute inset-0 rounded-xl border"
+        style={{
+          background: `linear-gradient(160deg, ${from} 0%, ${to} 100%)`,
+          borderColor: `${to}cc`,
+          boxShadow: `inset 0 1px 0 ${to}, 0 12px 24px -12px ${from}aa`,
+          backfaceVisibility: "hidden",
+        }}
+      >
+        <div
+          className="absolute inset-2 rounded-lg"
+          style={{
+            background:
+              "repeating-linear-gradient(135deg, rgb(255 255 255 / 8%) 0 6px, transparent 6px 12px)",
+          }}
+        />
+        <div
+          className="absolute inset-0 grid place-items-center text-lg font-black"
+          style={{ color: "rgb(255 255 255 / 80%)" }}
+        >
+          ?
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ---- variant: vault (bank door with spinning dial) ---- */
+function VaultArt({
+  from,
+  to,
+  lidOpen,
+}: {
+  from: string;
+  to: string;
+  lidOpen: boolean;
+}) {
+  return (
+    <>
+      <div
+        className="absolute inset-[10%] rounded-2xl border"
+        style={{
+          background: `linear-gradient(180deg, ${from}, oklch(0.18 0.025 275))`,
+          borderColor: `${to}99`,
+          boxShadow: `inset 0 2px 0 ${to}66, 0 8px 20px -12px ${from}aa`,
+        }}
+      />
+      <motion.div
+        initial={false}
+        animate={{
+          rotate: lidOpen ? 540 : 0,
+          scale: lidOpen ? 0.8 : 1,
+        }}
+        transition={{
+          duration: lidOpen ? 0.9 : 0.4,
+          ease: "easeInOut",
+        }}
+        className="absolute left-1/2 top-1/2 h-[44%] w-[44%] -translate-x-1/2 -translate-y-1/2 rounded-full border"
+        style={{
+          background: `radial-gradient(circle at 30% 28%, ${to}, ${from})`,
+          borderColor: `${to}`,
+          boxShadow: `inset 0 0 16px ${from}aa, 0 0 14px ${to}66`,
+        }}
+      >
+        {[0, 60, 120, 180, 240, 300].map((deg) => (
+          <span
+            key={deg}
+            className="absolute left-1/2 top-1/2 block h-[42%] w-[4px] -translate-x-1/2 origin-bottom"
+            style={{
+              transform: `translate(-50%, -100%) rotate(${deg}deg)`,
+              background: `linear-gradient(180deg, ${to}, transparent)`,
+            }}
+          />
+        ))}
+        <span
+          className="absolute left-1/2 top-1/2 size-[30%] -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{ background: `${from}`, boxShadow: `inset 0 0 6px ${to}` }}
+        />
+      </motion.div>
+    </>
   );
 }
 

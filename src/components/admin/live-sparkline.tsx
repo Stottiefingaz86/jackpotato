@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import { useJackpotStream } from "@/hooks/use-jackpot-stream";
 
@@ -18,18 +18,23 @@ export function LiveSparkline({
 }) {
   const { recentEvents } = useJackpotStream();
   const [series, setSeries] = useState<number[]>(() => Array(40).fill(0));
-  const [lastCount, setLastCount] = useState(0);
+
+  // Keep a ref to the latest event count so the 1s interval can read it
+  // without being a dependency (which would tear down + rebuild the timer
+  // on every SSE tick — the root cause of the admin freeze).
+  const latestCountRef = useRef(recentEvents.length);
+  latestCountRef.current = recentEvents.length;
 
   useEffect(() => {
+    let prev = latestCountRef.current;
     const id = setInterval(() => {
-      setSeries((prev) => {
-        const next = [...prev.slice(1), Math.max(0, recentEvents.length - lastCount)];
-        return next;
-      });
-      setLastCount(recentEvents.length);
+      const now = latestCountRef.current;
+      const diff = Math.max(0, now - prev);
+      prev = now;
+      setSeries((s) => [...s.slice(1), diff]);
     }, 1000);
     return () => clearInterval(id);
-  }, [recentEvents.length, lastCount]);
+  }, []);
 
   const latest = series[series.length - 1] ?? 0;
   const data = series.map((v, i) => ({ i, v }));

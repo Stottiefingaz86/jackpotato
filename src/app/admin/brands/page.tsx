@@ -61,7 +61,7 @@ export default async function BrandsPage() {
                     <CardTitle className="truncate">{b.name}</CardTitle>
                     <CardDescription className="flex items-center gap-1.5">
                       <Globe2 className="size-3" />
-                      {b.slug}.jackpotato.app
+                      {b.slug}.turbopot.app
                     </CardDescription>
                   </div>
                   <Badge

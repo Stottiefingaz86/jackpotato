@@ -169,6 +169,7 @@ export default async function CratesAdminPage() {
               <TableRow>
                 <TableHead>Crate</TableHead>
                 <TableHead>Rarity</TableHead>
+                <TableHead>Animation</TableHead>
                 <TableHead>Trigger</TableHead>
                 <TableHead>Prizes</TableHead>
                 <TableHead className="text-right">Daily cap</TableHead>
@@ -206,6 +207,9 @@ export default async function CratesAdminPage() {
                       >
                         {c.rarity}
                       </span>
+                    </TableCell>
+                    <TableCell className="text-xs capitalize text-muted-foreground">
+                      {c.artVariant ?? "chest"}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {triggerText}

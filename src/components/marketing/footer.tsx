@@ -1,20 +1,20 @@
+import Image from "next/image";
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
 
 export function MarketingFooter() {
   return (
     <footer className="border-t border-border/50 mt-24 py-12 text-sm text-muted-foreground">
       <div className="mx-auto max-w-7xl px-6 grid gap-8 md:grid-cols-4">
         <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
-            <span
-              className="grid size-8 place-items-center rounded-full"
-              style={{ background: "var(--jp-gradient)" }}
-            >
-              <Sparkles className="size-4 text-[oklch(0.12_0.02_275)]" />
-            </span>
-            Jackpotato
-          </div>
+          <Image
+            src="/logo.png"
+            alt="TurboPot"
+            width={440}
+            height={128}
+            unoptimized
+            className="h-7 w-auto"
+            style={{ height: 28, width: "auto", maxWidth: 140 }}
+          />
           <p className="max-w-xs">
             Flexible. Powerful. Your jackpot engine. Built for operators, vendors and brands who want real-time excitement without hardcoding jackpot logic into every game.
           </p>
@@ -42,7 +42,7 @@ export function MarketingFooter() {
         </div>
       </div>
       <div className="mx-auto max-w-7xl px-6 mt-10 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <span>© 2026 Jackpotato — The complete jackpot engagement stack.</span>
+        <span>© 2026 TurboPot — The complete jackpot engagement stack.</span>
         <span className="text-xs uppercase tracking-widest">Certified · Trusted · Built to win</span>
       </div>
     </footer>

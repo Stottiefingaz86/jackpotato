@@ -29,12 +29,15 @@ export function StickyJackpotWidget({
   positioning = "fixed",
   defaultOpen = true,
 }: StickyJackpotWidgetProps) {
-  const { tiers, total, lastWin, pulseKey } = useLiveCampaign(live);
+  const { tiers, total, lastWin } = useLiveCampaign(live);
+  const showTiers = config?.showTiers === true;
   const [open, setOpen] = useState(defaultOpen);
   const currency = theme.currency ?? live.campaign.currency;
   const locale = theme.locale ?? live.campaign.locale ?? "en-EU";
   const featured = tiers[0];
-  const pulse = (config?.pulse ?? true) && theme.motion.pulse;
+  // Opt-in only — the ambient ring pulse is distracting on marketing pages,
+  // so it now requires `config.pulse === true` rather than defaulting on.
+  const pulse = config?.pulse === true && theme.motion.pulse;
 
   const winKey = useMemo(
     () => (lastWin ? `${lastWin.campaignId}-${lastWin.timestamp}` : null),
@@ -117,13 +120,7 @@ export function StickyJackpotWidget({
               </button>
             </div>
 
-            <motion.div
-              key={pulseKey}
-              initial={{ scale: 1 }}
-              animate={{ scale: [1, 1.02, 1] }}
-              transition={{ duration: 0.5 }}
-              className="px-4 pb-3 pt-1"
-            >
+            <div className="px-4 pb-3 pt-1">
               <div
                 className="gradient-text font-display font-semibold leading-none max-w-full overflow-hidden"
                 style={{
@@ -139,7 +136,7 @@ export function StickyJackpotWidget({
                   compact={(featured?.currentAmount ?? total) >= 1_000_000}
                 />
               </div>
-              {tiers.length > 1 && (
+              {showTiers && tiers.length > 1 && (
                 <div className="mt-3 grid grid-cols-2 gap-1.5">
                   {tiers.slice(1, 5).map((t) => (
                     <div
@@ -188,7 +185,7 @@ export function StickyJackpotWidget({
                   <Sparkles className="size-3.5" /> Play now
                 </a>
               )}
-            </motion.div>
+            </div>
 
             <AnimatePresence>
               {lastWin && (

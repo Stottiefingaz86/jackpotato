@@ -17,12 +17,14 @@ import {
   Sparkles,
   Users,
   Package,
+  Ticket,
 } from "lucide-react";
 
 const items = [
   { href: "/admin", label: "Overview", Icon: LayoutDashboard, exact: true },
   { href: "/admin/campaigns", label: "Campaigns", Icon: Trophy },
   { href: "/admin/crates", label: "Crate Drops", Icon: Package },
+  { href: "/admin/raffles", label: "Raffles", Icon: Ticket },
   { href: "/admin/widgets", label: "Widgets", Icon: Sparkles },
   { href: "/admin/themes", label: "Themes", Icon: Paintbrush },
   { href: "/admin/brands", label: "Brands", Icon: Store },

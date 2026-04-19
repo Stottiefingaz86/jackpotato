@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -26,8 +27,12 @@ import { HeroJackpotBanner } from "@/components/widgets/hero-jackpot-banner";
 import { StickyJackpotWidget } from "@/components/widgets/sticky-jackpot-widget";
 import { MustDropMeter } from "@/components/widgets/must-drop-meter";
 import { ThemeScope } from "@/components/widgets/theme-scope";
+import {
+  ThemePattern,
+  THEME_PATTERN_LABELS,
+} from "@/components/effects/theme-pattern";
 import type { LiveCampaign } from "@/components/widgets/shared";
-import type { ThemeTokens, WidgetTheme } from "@/lib/types";
+import type { ThemePattern as ThemePatternType, ThemeTokens, WidgetTheme } from "@/lib/types";
 import { saveTheme } from "@/app/actions/themes";
 
 export function ThemeEditor({
@@ -39,10 +44,22 @@ export function ThemeEditor({
   initial: WidgetTheme;
   live: LiveCampaign;
 }) {
+  const router = useRouter();
   const [selectedId, setSelectedId] = useState(initial.id);
   const base = themes.find((t) => t.id === selectedId) ?? initial;
   const [draft, setDraft] = useState<WidgetTheme>(base);
   const [isPending, start] = useTransition();
+
+  // Split by tenant ownership so we can show "Your themes" above shared presets.
+  const ownedTenantId = initial.tenantId;
+  const ownThemes = useMemo(
+    () => themes.filter((t) => t.tenantId === ownedTenantId),
+    [themes, ownedTenantId]
+  );
+  const presetThemes = useMemo(
+    () => themes.filter((t) => t.tenantId !== ownedTenantId),
+    [themes, ownedTenantId]
+  );
 
   const tokens: ThemeTokens = draft.tokens;
 
@@ -72,7 +89,12 @@ export function ThemeEditor({
         description: draft.description,
         tokens: draft.tokens,
       });
-      toast.success("Theme saved");
+      // Force the RSC cache to drop so downstream widget pages, the widgets
+      // grid, and the landing preview all pick up the new token values on
+      // their next read. Without this the server action revalidates paths
+      // but React doesn't know to re-fetch the active route tree.
+      router.refresh();
+      toast.success("Theme saved — widgets updated");
     });
   }
 
@@ -95,39 +117,44 @@ export function ThemeEditor({
           <CardHeader>
             <CardTitle>Presets</CardTitle>
             <CardDescription>
-              Start from a preset or duplicate any theme you own.
+              Start from any theme — your own or a built-in preset.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {themes.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => select(t.id)}
-                className={`flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2 text-left transition ${t.id === selectedId ? "border-primary bg-primary/5" : "border-border/60 hover:border-border"}`}
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="flex -space-x-1.5">
-                    <span
-                      className="size-5 rounded-full border border-background"
-                      style={{ background: t.tokens.primary }}
-                    />
-                    <span
-                      className="size-5 rounded-full border border-background"
-                      style={{ background: t.tokens.secondary }}
-                    />
-                    <span
-                      className="size-5 rounded-full border border-background"
-                      style={{ background: t.tokens.accent }}
-                    />
-                  </div>
-                  <span className="truncate text-sm font-medium">{t.name}</span>
+          <CardContent className="space-y-4">
+            {ownThemes.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  Your themes
                 </div>
-                {t.id === selectedId && (
-                  <Check className="size-4 text-primary" />
-                )}
-              </button>
-            ))}
+                <div className="space-y-2">
+                  {ownThemes.map((t) => (
+                    <PresetButton
+                      key={t.id}
+                      theme={t}
+                      selected={t.id === selectedId}
+                      onSelect={select}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            {presetThemes.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  Built-in presets
+                </div>
+                <div className="space-y-2">
+                  {presetThemes.map((t) => (
+                    <PresetButton
+                      key={t.id}
+                      theme={t}
+                      selected={t.id === selectedId}
+                      onSelect={select}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -239,6 +266,51 @@ export function ThemeEditor({
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>Background pattern</CardTitle>
+            <CardDescription>
+              Decorative layer rendered behind every widget using this theme.
+              Click a tile to preview.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* Wrap the tiles in a ThemeScope so the pattern previews
+             * inherit the current draft's theme colors via `--jp-*` vars. */}
+            <ThemeScope tokens={tokens}>
+              <div className="grid grid-cols-2 gap-2">
+                {(Object.keys(THEME_PATTERN_LABELS) as ThemePatternType[]).map(
+                  (p) => {
+                    const selected = (tokens.pattern ?? "beams") === p;
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => patch({ pattern: p })}
+                        className={`relative h-20 overflow-hidden rounded-xl border text-left transition ${selected ? "border-primary ring-2 ring-primary/40" : "border-border/60 hover:border-border"}`}
+                        style={{
+                          background:
+                            "linear-gradient(180deg, oklch(from var(--jp-card) l c h / 96%), oklch(from var(--jp-card-2) l c h / 96%))",
+                        }}
+                      >
+                        <ThemePattern pattern={p} />
+                        <span className="absolute bottom-1.5 left-2 right-2 truncate text-[11px] font-medium drop-shadow">
+                          {THEME_PATTERN_LABELS[p]}
+                        </span>
+                        {selected && (
+                          <span className="absolute top-1.5 right-1.5 grid size-5 place-items-center rounded-full bg-primary text-primary-foreground">
+                            <Check className="size-3" />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  }
+                )}
+              </div>
+            </ThemeScope>
+          </CardContent>
+        </Card>
+
         <Button
           disabled={isPending}
           onClick={submit}
@@ -266,7 +338,7 @@ export function ThemeEditor({
               config={{
                 headline: draft.name,
                 subheadline: "Theme preview — everything updates live.",
-                showTiers: true,
+                showTiers: false,
                 animationLevel: "full",
                 pulse: true,
               }}
@@ -296,6 +368,43 @@ export function ThemeEditor({
 
 function Row({ children }: { children: React.ReactNode }) {
   return <div className="flex items-center justify-between">{children}</div>;
+}
+
+function PresetButton({
+  theme,
+  selected,
+  onSelect,
+}: {
+  theme: WidgetTheme;
+  selected: boolean;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(theme.id)}
+      className={`flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2 text-left transition ${selected ? "border-primary bg-primary/5" : "border-border/60 hover:border-border"}`}
+    >
+      <div className="flex items-center gap-2 min-w-0">
+        <div className="flex -space-x-1.5">
+          <span
+            className="size-5 rounded-full border border-background"
+            style={{ background: theme.tokens.primary }}
+          />
+          <span
+            className="size-5 rounded-full border border-background"
+            style={{ background: theme.tokens.secondary }}
+          />
+          <span
+            className="size-5 rounded-full border border-background"
+            style={{ background: theme.tokens.accent }}
+          />
+        </div>
+        <span className="truncate text-sm font-medium">{theme.name}</span>
+      </div>
+      {selected && <Check className="size-4 text-primary" />}
+    </button>
+  );
 }
 
 /** Attempt to coerce any color string to a hex so <input type=color> works. */

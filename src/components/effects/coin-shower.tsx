@@ -29,12 +29,15 @@ export function CoinShower({
   const particles = useMemo(() => {
     return Array.from({ length: count }).map((_, i) => ({
       id: i,
-      x: Math.random() * 100,
+      // Horizontal position is set via CSS `left` (parent-relative) so the
+      // coins spread across the whole surface instead of stacking at 0,0.
+      xStart: Math.random() * 100,
+      xEnd: Math.random() * 100,
       delay: Math.random() * 0.6,
-      // Larger range so coins read as coins, not dots.
-      size: 16 + Math.random() * 14,
+      // Slightly smaller range — these read as coins without dominating
+      // small widget surfaces like the must-drop meter.
+      size: 14 + Math.random() * 12,
       rot: (Math.random() - 0.5) * 720,
-      drift: (Math.random() - 0.5) * 30,
       kind: Math.random() > 0.35 ? "coin" : "spark",
     }));
   }, [count, active]);
@@ -49,10 +52,15 @@ export function CoinShower({
           {particles.map((p) => (
             <motion.div
               key={`${active}-${p.id}`}
-              initial={{ y: "-10%", x: `${p.x}%`, opacity: 0, rotate: 0 }}
+              // We animate CSS `top` / `left` (parent-relative percentages)
+              // rather than framer-motion's `x` / `y` transforms, because
+              // transform percentages resolve against the element's own
+              // box — which makes tiny coins only travel ~30px before
+              // stopping. Using `top` lets them fall across the full card.
+              initial={{ top: "-12%", left: `${p.xStart}%`, opacity: 0, rotate: 0 }}
               animate={{
-                y: "110%",
-                x: `${p.x + p.drift}%`,
+                top: "112%",
+                left: `${p.xEnd}%`,
                 opacity: [0, 1, 1, 0],
                 rotate: p.rot,
               }}

@@ -1,7 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useJackpotStream } from "@/hooks/use-jackpot-stream";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useJackpotConnected,
+  useJackpotLatestWin,
+  useJackpotTiers,
+} from "@/hooks/use-jackpot-stream";
 import type {
   JackpotCampaign,
   JackpotTier,
@@ -32,50 +36,54 @@ export interface LiveCampaign {
 /**
  * Takes an initial LiveCampaign (as delivered by the server) and returns
  * live amounts + most recent win for that campaign.
+ *
+ * Uses slice subscriptions so this component only re-renders when one of
+ * *its* tiers updates — not on every SSE event in the tab.
  */
 export function useLiveCampaign(initial: LiveCampaign) {
-  const stream = useJackpotStream();
   const campaignId = initial.campaign.id;
 
   const tierIds = useMemo(
-    () => new Set(initial.tiers.map((t) => t.tierId)),
+    () => initial.tiers.map((t) => t.tierId),
     [initial.tiers]
   );
 
-  const tiers = initial.tiers.map((t) => ({
-    ...t,
-    currentAmount: stream.tiers[t.tierId] ?? t.currentAmount,
-  }));
+  const tierAmounts = useJackpotTiers(tierIds);
+  const lastWin = useJackpotLatestWin(campaignId, tierIds);
+  const connected = useJackpotConnected();
 
-  const total = tiers.reduce((sum, t) => sum + t.currentAmount, 0);
+  const tiers = useMemo(
+    () =>
+      initial.tiers.map((t) => ({
+        ...t,
+        currentAmount: tierAmounts[t.tierId] ?? t.currentAmount,
+      })),
+    [initial.tiers, tierAmounts]
+  );
 
-  const lastWin = useMemo(() => {
-    return stream.recentWins.find(
-      (w) => w.campaignId === campaignId && tierIds.has(w.tierId)
-    );
-  }, [stream.recentWins, campaignId, tierIds]);
+  const total = useMemo(
+    () => tiers.reduce((sum, t) => sum + t.currentAmount, 0),
+    [tiers]
+  );
 
-  // Track the most recent contribution for this campaign, used to trigger
-  // a subtle pulse on the amount when it updates.
+  // Ticks whenever our tier amounts change — used as a cheap animation key
+  // for subtle scale pulses on value updates. Stays stable when unrelated
+  // campaigns update because `tierAmounts` is a stable-reference slice.
   const [pulseKey, setPulseKey] = useState(0);
+  const prevAmountsRef = useRef(tierAmounts);
   useEffect(() => {
-    const last = stream.recentEvents[0];
-    if (!last) return;
-    if (
-      last.type === "jackpot.updated" &&
-      last.campaignId === campaignId &&
-      tierIds.has(last.tierId)
-    ) {
+    if (prevAmountsRef.current !== tierAmounts) {
+      prevAmountsRef.current = tierAmounts;
       setPulseKey((k) => k + 1);
     }
-  }, [stream.recentEvents, campaignId, tierIds]);
+  }, [tierAmounts]);
 
   return {
     tiers,
     total,
     lastWin,
     pulseKey,
-    connected: stream.connected,
+    connected,
   };
 }
 

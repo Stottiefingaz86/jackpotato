@@ -6,7 +6,7 @@ import { CrateCard } from "@/components/crates/crate-card";
 import { getCratesForTenant } from "@/lib/data/store";
 
 export default function CratesShowcasePage() {
-  const crates = getCratesForTenant("tnt_jackpotato");
+  const crates = getCratesForTenant("tnt_turbopot");
   const live = crates.filter((c) => c.status === "live");
   const draft = crates.filter((c) => c.status !== "live");
 
@@ -21,7 +21,7 @@ export default function CratesShowcasePage() {
           Turn every spin into a <span className="gradient-text">reward loop</span>.
         </h1>
         <p className="text-muted-foreground max-w-2xl">
-          Crate Drops sit on top of Jackpotato and give operators another engagement dial.
+          Crate Drops sit on top of TurboPot and give operators another engagement dial.
           Players unlock crates through gameplay — and pop them open to reveal cash, free
           spins, free bets, deposit matches, and multipliers. Try opening one below.
         </p>

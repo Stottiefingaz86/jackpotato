@@ -5,6 +5,11 @@ import { StickyJackpotWidget } from "@/components/widgets/sticky-jackpot-widget"
 import { MustDropMeter } from "@/components/widgets/must-drop-meter";
 import { RecentWinnerTicker } from "@/components/widgets/recent-winner-ticker";
 import { GameCardBadge } from "@/components/widgets/game-card-badge";
+import { LeaderboardWidget } from "@/components/widgets/leaderboard";
+import { WinnerSpotlightWidget } from "@/components/widgets/winner-spotlight";
+import { JackpotOdometer } from "@/components/widgets/jackpot-odometer";
+import { LiveActivityFeed } from "@/components/widgets/live-activity-feed";
+import { JackpotTiers } from "@/components/widgets/jackpot-tiers";
 import { ThemeScope } from "@/components/widgets/theme-scope";
 import type { LiveCampaign } from "@/components/widgets/shared";
 import type { JackpotWin, ThemeTokens, Widget } from "@/lib/types";
@@ -26,24 +31,56 @@ export function WidgetCardPreview({
 }) {
   switch (widget.type) {
     case "hero":
+      // The hero banner is a large surface. We scale the unscaled element to
+      // fit the 220px preview slot. `transform: scale` doesn't shrink layout
+      // box, so wrap it in a fixed-height overflow-hidden frame and absolutely
+      // position the scaled child so the outer Card stays compact.
       return (
-        <div className="origin-top-left scale-[0.62] w-[160%]">
-          <HeroJackpotBanner
-            live={live}
-            theme={theme}
-            compact
-            config={{ ...widget.config, showTiers: false }}
-          />
+        <div className="relative h-[220px] w-full overflow-hidden">
+          <div
+            className="absolute inset-0 origin-top-left"
+            style={{ transform: "scale(0.62)", width: "161.3%" }}
+          >
+            <HeroJackpotBanner
+              live={live}
+              theme={theme}
+              compact
+              config={{ ...widget.config, showTiers: false }}
+            />
+          </div>
+        </div>
+      );
+    case "tier_cards":
+      // Tier strip — shrink slightly so all 3 cards fit inside the compact
+      // preview frame without horizontal overflow.
+      return (
+        <div className="relative h-[220px] w-full overflow-hidden p-3">
+          <div
+            className="origin-top-left"
+            style={{ transform: "scale(0.7)", width: "143%" }}
+          >
+            <JackpotTiers
+              live={live}
+              theme={theme}
+              config={widget.config}
+            />
+          </div>
         </div>
       );
     case "must_drop_meter":
+      // Meter is shorter; scale lightly so the whole bar + label row fit.
       return (
-        <div className="p-3">
-          <MustDropMeter
-            live={live}
-            theme={theme}
-            config={widget.config}
-          />
+        <div className="relative h-[220px] w-full overflow-hidden p-3">
+          <div
+            className="origin-top-left"
+            style={{ transform: "scale(0.9)", width: "111.2%" }}
+          >
+            <MustDropMeter
+              live={live}
+              theme={theme}
+              config={widget.config}
+            />
+          </div>
         </div>
       );
     case "sticky":
@@ -69,7 +106,7 @@ export function WidgetCardPreview({
       );
     case "winner_ticker":
       return (
-        <div className="p-3">
+        <div className="relative h-[120px] w-full overflow-hidden p-3 flex items-center">
           <RecentWinnerTicker
             initial={winners}
             theme={theme}
@@ -81,10 +118,53 @@ export function WidgetCardPreview({
           />
         </div>
       );
+    case "leaderboard":
+      return (
+        <div className="relative h-[320px] w-full overflow-hidden p-3">
+          <LeaderboardWidget
+            initial={winners}
+            theme={theme}
+            config={widget.config}
+            className="h-full"
+          />
+        </div>
+      );
+    case "winner_spotlight":
+      return (
+        <div className="relative h-[220px] w-full overflow-hidden p-3">
+          <WinnerSpotlightWidget
+            initial={winners}
+            theme={theme}
+            config={widget.config}
+          />
+        </div>
+      );
+    case "odometer":
+      return (
+        <div className="relative h-[120px] w-full overflow-hidden p-3 flex items-center">
+          <JackpotOdometer
+            live={live}
+            theme={theme}
+            config={widget.config}
+            className="w-full"
+          />
+        </div>
+      );
+    case "activity_feed":
+      return (
+        <div className="relative h-[320px] w-full overflow-hidden p-3">
+          <LiveActivityFeed
+            initial={winners}
+            theme={theme}
+            config={{ ...widget.config, maxItems: 5 }}
+            className="h-full"
+          />
+        </div>
+      );
     case "game_badge":
       return (
-        <ThemeScope tokens={theme} className="p-3">
-          <div className="grid gap-2 grid-cols-2">
+        <ThemeScope tokens={theme} className="relative h-[220px] w-full overflow-hidden p-3">
+          <div className="grid gap-2 grid-cols-2 h-full">
             {["Book of Gold", "Neon City"].map((g) => (
               <div
                 key={g}

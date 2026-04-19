@@ -158,6 +158,15 @@ export interface JackpotWin {
   wonAt: ISODate;
 }
 
+export type ThemePattern =
+  | "none"
+  | "beams"
+  | "grid"
+  | "dots"
+  | "aurora"
+  | "noise"
+  | "diagonal";
+
 export interface ThemeTokens {
   primary: string;
   secondary: string;
@@ -180,6 +189,12 @@ export interface ThemeTokens {
     celebrate: boolean;
   };
   density: "comfortable" | "compact";
+  /**
+   * Optional decorative pattern rendered behind widget content. Defaults to
+   * "beams" (subtle vertical lines) when unset — the look from the original
+   * Must-Drop Meter card. Widgets can override per-instance.
+   */
+  pattern?: ThemePattern;
   currency?: string;
   locale?: string;
 }
@@ -197,9 +212,17 @@ export interface WidgetTheme {
 export type WidgetType =
   | "sticky"
   | "hero"
+  | "tier_cards"
   | "must_drop_meter"
   | "winner_ticker"
-  | "game_badge";
+  | "game_badge"
+  | "leaderboard"
+  | "winner_spotlight"
+  | "odometer"
+  | "activity_feed";
+
+export type LeaderboardPeriod = "24h" | "7d" | "30d" | "all_time";
+export type LeaderboardMetric = "total_won" | "wins" | "biggest_win";
 
 export type WidgetStatus = "draft" | "live" | "paused";
 
@@ -215,7 +238,17 @@ export interface WidgetConfig {
   tierVisibility?: ID[];
   animationLevel?: "none" | "subtle" | "full";
   countdown?: boolean;
-  tickerMode?: "ticker" | "toast";
+  /**
+   * Recent-winner display mode.
+   *   - `ticker`: classic horizontal marquee that scrolls the recent list.
+   *   - `bar`: flat, dense horizontal strip. No leading icon, no pill chrome —
+   *            designed to sit in a top/bottom bar that already has its own
+   *            chrome (the "green bar" look).
+   *   - `stack`: vertical list of rows, one winner per line. Great for
+   *            sidebars where horizontal real estate is scarce.
+   *   - `toast`: rotating single-winner notification with a soft entrance.
+   */
+  tickerMode?: "ticker" | "bar" | "stack" | "toast";
   showFlag?: boolean;
   anonymize?: boolean;
   autoRotateSpeed?: number;
@@ -223,6 +256,9 @@ export interface WidgetConfig {
   badgeText?: string;
   showAmount?: boolean;
   clickDestination?: string;
+  leaderboardPeriod?: LeaderboardPeriod;
+  leaderboardMetric?: LeaderboardMetric;
+  showCountry?: boolean;
 }
 
 export interface Widget {
@@ -386,6 +422,19 @@ export type CrateUnlockTrigger =
 
 export type CrateStatus = "draft" | "live" | "paused" | "archived";
 
+/**
+ * Visual + animation preset used by the `CrateArt` component on the card.
+ * Each variant has a distinct idle / opening / opened animation so operators
+ * can match the crate aesthetic to their brand.
+ */
+export type CrateArtVariant =
+  | "chest"
+  | "orb"
+  | "gem"
+  | "card"
+  | "vault"
+  | "custom";
+
 export interface Crate {
   id: ID;
   tenantId: ID;
@@ -405,6 +454,15 @@ export interface Crate {
   expectedValue?: number;
   currency: string;
   status: CrateStatus;
+  /** Which art preset the CrateCard should render. Defaults to `chest`. */
+  artVariant?: CrateArtVariant;
+  /**
+   * When `artVariant === "custom"`, the URL / data-URL of the uploaded
+   * image rendered in place of the built-in variants. Can be any valid
+   * `src` — an https URL, a CDN asset, or a base64 data-URL stored at
+   * upload time.
+   */
+  artImageUrl?: string;
   createdAt: ISODate;
   updatedAt: ISODate;
 }
@@ -420,4 +478,88 @@ export interface CrateUnlock {
   unlockedAt: ISODate;
   openedAt: ISODate | null;
   awardedPrizeId: ID | null;
+}
+
+/*
+ * -----------------------------------------------------------------------
+ * Raffles — ticket-draw promotions
+ *
+ * Players earn tickets via gameplay (stake milestones, winning streaks,
+ * manual operator grants, etc.). At `drawAt`, the platform draws a
+ * winner weighted by ticket count. Raffles sit alongside Crate Drops
+ * as a parallel gamification lane — Crates reward individual players on
+ * their own schedule, Raffles pool everyone into communal drawings.
+ * -----------------------------------------------------------------------
+ */
+
+export type RafflePrizeType = "cash" | "freespins" | "freebet" | "bonus" | "physical";
+
+export interface RafflePrize {
+  id: ID;
+  type: RafflePrizeType;
+  label: string;
+  value: number;
+  currency?: string;
+  subtitle?: string;
+  /** Sort order — position 0 is the grand prize. */
+  rank: number;
+}
+
+export type RaffleTicketTrigger =
+  | { kind: "stake_amount"; perTicket: number; currency: string }
+  | { kind: "deposit_amount"; perTicket: number; currency: string }
+  | { kind: "spin_count"; perTicket: number }
+  | { kind: "manual" };
+
+export type RaffleStatus = "draft" | "live" | "drawing" | "completed" | "archived";
+
+export interface Raffle {
+  id: ID;
+  tenantId: ID;
+  brandIds: ID[];
+  name: string;
+  description: string;
+  status: RaffleStatus;
+  currency: string;
+  /** CSS color used for accents. */
+  color?: string;
+  /** Prize pool — position 0 is the grand prize. */
+  prizes: RafflePrize[];
+  /** How tickets are earned. */
+  ticketTrigger: RaffleTicketTrigger;
+  /** Max tickets any single player can accumulate. `null` = unlimited. */
+  maxTicketsPerPlayer: number | null;
+  /** When tickets can start being earned. */
+  startsAt: ISODate;
+  /** When ticket earning closes. */
+  endsAt: ISODate;
+  /** When the winner(s) are drawn. */
+  drawAt: ISODate;
+  /** Cached totals — rebuilt when entries change. */
+  totalTickets: number;
+  totalPlayers: number;
+  createdAt: ISODate;
+  updatedAt: ISODate;
+}
+
+export interface RaffleEntry {
+  id: ID;
+  raffleId: ID;
+  playerId: string;
+  displayName: string;
+  country?: string;
+  ticketCount: number;
+  firstEarnedAt: ISODate;
+  lastEarnedAt: ISODate;
+}
+
+export interface RaffleWinner {
+  id: ID;
+  raffleId: ID;
+  entryId: ID;
+  prizeId: ID;
+  playerId: string;
+  displayName: string;
+  country?: string;
+  drawnAt: ISODate;
 }

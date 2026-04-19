@@ -1,10 +1,10 @@
 import type { Widget } from "@/lib/types";
 
-const DEFAULT_ORIGIN = process.env.NEXT_PUBLIC_SITE_URL ?? "https://jackpotato.app";
+const DEFAULT_ORIGIN = process.env.NEXT_PUBLIC_SITE_URL ?? "https://turbopot.app";
 
 export function htmlSnippet(widget: Widget, origin = DEFAULT_ORIGIN) {
   return [
-    `<!-- Jackpotato widget: ${widget.name} -->`,
+    `<!-- TurboPot widget: ${widget.name} -->`,
     `<div data-jackpot-widget="${widget.id}"></div>`,
     `<script async src="${origin}/widget-loader.js"`,
     `        data-api-key="pk_live_••••••••"></script>`,
@@ -24,7 +24,7 @@ export function iframeSnippet(widget: Widget, origin = DEFAULT_ORIGIN) {
 export function reactSnippet(widget: Widget) {
   const Comp = reactComponentName(widget);
   return [
-    `import { ${Comp} } from "@jackpotato/react";`,
+    `import { ${Comp} } from "@turbopot/react";`,
     ``,
     `export function MyJackpot() {`,
     `  return (`,
@@ -54,12 +54,22 @@ function reactComponentName(widget: Widget) {
       return "StickyJackpot";
     case "hero":
       return "HeroJackpot";
+    case "tier_cards":
+      return "JackpotTiers";
     case "must_drop_meter":
       return "MustDropMeter";
     case "winner_ticker":
       return "WinnerTicker";
     case "game_badge":
       return "GameCardBadge";
+    case "leaderboard":
+      return "Leaderboard";
+    case "winner_spotlight":
+      return "WinnerSpotlight";
+    case "odometer":
+      return "JackpotOdometer";
+    case "activity_feed":
+      return "LiveActivityFeed";
   }
 }
 
@@ -67,12 +77,22 @@ function iframeHeight(widget: Widget) {
   switch (widget.type) {
     case "hero":
       return 420;
+    case "tier_cards":
+      return 260;
     case "must_drop_meter":
       return 220;
     case "winner_ticker":
       return 80;
     case "game_badge":
       return 120;
+    case "leaderboard":
+      return 420;
+    case "winner_spotlight":
+      return 260;
+    case "odometer":
+      return 90;
+    case "activity_feed":
+      return 420;
     default:
       return 140;
   }

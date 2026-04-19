@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { Flame, Trophy } from "lucide-react";
 import { RollingNumber } from "@/components/effects/rolling-number";
 import { CountdownClock } from "@/components/effects/countdown-clock";
-import { GlowPulse } from "@/components/effects/glow-pulse";
+import { ThemePattern } from "@/components/effects/theme-pattern";
 import { ShineSweep } from "@/components/effects/shine-sweep";
 import { ConfettiBurst } from "@/components/effects/confetti-burst";
 import { CoinShower } from "@/components/effects/coin-shower";
@@ -43,6 +43,11 @@ export function MustDropMeter({
       : (tracked?.currentAmount ?? 0) / 1000
   );
   const urgent = pct >= 80;
+  // Only animate when explicitly asked. Defaults to false because the
+  // must-drop card is often placed on dense pages where a throbbing
+  // box-shadow is more distracting than useful. The badge text already
+  // conveys the "dropping soon" urgency.
+  const shouldPulse = config?.pulse === true;
 
   const winKey = useMemo(
     () => (lastWin ? `${lastWin.campaignId}-${lastWin.timestamp}` : null),
@@ -62,13 +67,16 @@ export function MustDropMeter({
           : "var(--jp-border)",
         background:
           "linear-gradient(180deg, oklch(from var(--jp-card) l c h / 96%), oklch(from var(--jp-card-2) l c h / 96%))",
-        boxShadow: urgent
+        // Respect the motion preference. A static border + modest shadow is
+        // enough for the "urgent" state when pulse is off; the expansive
+        // glow only kicks in when the theme / widget explicitly opts in.
+        boxShadow: urgent && shouldPulse
           ? "0 0 0 1px oklch(from var(--jp-accent) l c h / 35%), 0 0 60px oklch(from var(--jp-accent) l c h / 30%)"
           : "var(--jp-shadow)",
         fontFamily: "var(--jp-font-body)",
       }}
     >
-      <GlowPulse variant="beams" />
+      <ThemePattern pattern={theme.pattern} />
 
       <div className="relative z-10 flex flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
@@ -76,7 +84,7 @@ export function MustDropMeter({
             <span
               className={cn(
                 "grid size-8 place-items-center rounded-full",
-                urgent && "jp-pulse"
+                urgent && shouldPulse && "jp-pulse"
               )}
               style={{ background: "var(--jp-gradient)" }}
             >
@@ -189,25 +197,33 @@ export function MustDropMeter({
         {lastWin && (
           <motion.div
             key={winKey}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.4 }}
-            className="absolute inset-x-0 top-0 z-20 flex justify-center p-2"
+            initial={{ opacity: 0, y: -10, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 260, damping: 24 }}
+            className="absolute top-2 right-2 z-20 pointer-events-none"
           >
             <div
-              className="glass flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium"
+              className="glass inline-flex max-w-[min(80%,280px)] items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium whitespace-nowrap overflow-hidden"
               style={{ color: "var(--jp-text)" }}
             >
-              <Trophy className="size-3.5" style={{ color: "var(--jp-accent)" }} />
-              <span>
-                <b>{lastWin.playerDisplay}</b> took the drop ·{" "}
-                <span style={{ color: "var(--jp-accent)" }}>
+              <Trophy
+                className="size-3 shrink-0"
+                style={{ color: "var(--jp-accent)" }}
+              />
+              <span className="truncate">
+                <b>{lastWin.playerDisplay}</b>
+                <span className="opacity-70"> dropped </span>
+                <span
+                  style={{ color: "var(--jp-accent)" }}
+                  className="font-semibold tabular"
+                >
                   <RollingNumber
                     value={lastWin.winAmount}
                     currency={currency}
                     locale={locale}
                     decimals={0}
+                    compact={lastWin.winAmount >= 10_000}
                   />
                 </span>
               </span>

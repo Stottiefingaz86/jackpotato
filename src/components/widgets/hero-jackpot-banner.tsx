@@ -4,7 +4,7 @@ import { motion, AnimatePresence, useAnimationControls } from "framer-motion";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { Dices, ArrowRight, Trophy } from "lucide-react";
 import { RollingNumber } from "@/components/effects/rolling-number";
-import { GlowPulse } from "@/components/effects/glow-pulse";
+import { ThemePattern } from "@/components/effects/theme-pattern";
 import { CoinShower } from "@/components/effects/coin-shower";
 import { ConfettiBurst } from "@/components/effects/confetti-burst";
 import { ShineSweep } from "@/components/effects/shine-sweep";
@@ -116,7 +116,10 @@ export function HeroJackpotBanner({
         border: "1px solid var(--jp-border)",
       }}
     >
-      <GlowPulse variant="aurora" />
+      {/* Default to the `beams` look across the suite so the hero and the
+       * must-drop card share the same signature "light lines" texture. A
+       * theme can override this via `tokens.pattern` from the editor. */}
+      <ThemePattern pattern={theme.pattern ?? "beams"} />
       <ShineSweep />
 
       <div
@@ -126,13 +129,13 @@ export function HeroJackpotBanner({
         )}
       >
         <div className="flex flex-col gap-5 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-col gap-2 min-w-0">
+            {/* Minimal live eyebrow — a single pulsing dot + the campaign type,
+             * replacing the two noisy pills that used to sit here. The recent
+             * win floats in as a toast at the top so it doesn't need a chip. */}
             <span
-              className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium uppercase tracking-wider"
-              style={{
-                borderColor: "var(--jp-border)",
-                background: "oklch(from var(--jp-card) l c h / 80%)",
-              }}
+              className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.24em]"
+              style={{ color: "var(--jp-muted)" }}
             >
               <span
                 className="inline-block size-1.5 rounded-full animate-pulse"
@@ -140,17 +143,6 @@ export function HeroJackpotBanner({
               />
               Live · {live.campaign.type.replace("_", " ")}
             </span>
-            {lastWin && (
-              <span
-                className="inline-flex items-center gap-1 text-xs opacity-80"
-                style={{ color: "var(--jp-accent)" }}
-              >
-                <Trophy className="size-3.5" /> Just won
-              </span>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-2 min-w-0">
             <h2
               className="font-display text-balance text-3xl sm:text-4xl lg:text-5xl font-semibold leading-[1.05]"
               style={{
@@ -312,24 +304,32 @@ export function HeroJackpotBanner({
         {lastWin && (
           <motion.div
             key={winKey}
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="absolute inset-x-0 top-0 z-20 flex items-center justify-center p-3"
+            initial={{ opacity: 0, y: -10, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 260, damping: 24 }}
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 pointer-events-none"
           >
             <div
-              className="glass rounded-full px-4 py-1.5 text-xs sm:text-sm font-medium"
+              className="glass inline-flex max-w-[min(80%,320px)] items-center gap-1.5 rounded-full px-3 py-1 text-[11px] sm:text-xs font-medium whitespace-nowrap overflow-hidden"
               style={{ color: "var(--jp-text)" }}
             >
-              <Trophy className="mr-2 inline size-3.5" />
-              <b>{lastWin.playerDisplay}</b> just hit{" "}
-              <span style={{ color: "var(--jp-accent)" }}>
-                <RollingNumber
-                  value={lastWin.winAmount}
-                  currency={currency}
-                  locale={locale}
-                  decimals={0}
-                />
+              <Trophy className="size-3 shrink-0" style={{ color: "var(--jp-accent)" }} />
+              <span className="truncate">
+                <b>{lastWin.playerDisplay}</b>
+                <span className="opacity-70"> won </span>
+                <span
+                  style={{ color: "var(--jp-accent)" }}
+                  className="font-semibold tabular"
+                >
+                  <RollingNumber
+                    value={lastWin.winAmount}
+                    currency={currency}
+                    locale={locale}
+                    decimals={0}
+                    compact={lastWin.winAmount >= 10_000}
+                  />
+                </span>
               </span>
             </div>
           </motion.div>

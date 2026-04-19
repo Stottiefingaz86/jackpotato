@@ -12,7 +12,7 @@ export async function getCurrentTenantId(): Promise<string> {
   const c = await cookies();
   const v = c.get(TENANT_COOKIE)?.value;
   if (v && store.tenants.find((t) => t.id === v)) return v;
-  return store.tenants[0]?.id ?? "tnt_jackpotato";
+  return store.tenants[0]?.id ?? "tnt_turbopot";
 }
 
 export async function getCurrentTenant() {

@@ -103,6 +103,154 @@ export function RecentWinnerTicker({
   // Duplicate items for seamless marquee loop
   const marqueeList = useMemo(() => [...items, ...items], [items]);
 
+  if (mode === "stack") {
+    return (
+      <ThemeScope
+        tokens={theme}
+        className={cn(
+          "relative overflow-hidden rounded-[var(--jp-radius)] border",
+          className
+        )}
+        style={{
+          borderColor: "var(--jp-border)",
+          background:
+            "linear-gradient(180deg, oklch(from var(--jp-card) l c h / 96%), oklch(from var(--jp-card-2) l c h / 96%))",
+          boxShadow: "var(--jp-shadow)",
+        }}
+      >
+        <div
+          className="flex items-center justify-between gap-2 border-b px-4 py-3"
+          style={{ borderColor: "var(--jp-border)" }}
+        >
+          <div className="flex items-center gap-2">
+            <span
+              className="grid size-6 place-items-center rounded-full"
+              style={{ background: "var(--jp-gradient)" }}
+            >
+              <Trophy
+                className="size-3"
+                style={{ color: "oklch(0.12 0.02 275)" }}
+              />
+            </span>
+            <span
+              className="text-sm font-semibold"
+              style={{ color: "var(--jp-text)" }}
+            >
+              {config?.headline ?? "Recent winners"}
+            </span>
+          </div>
+          <span
+            className="inline-block size-1.5 rounded-full"
+            style={{
+              background: stream.connected ? "var(--jp-accent)" : "var(--jp-muted)",
+              boxShadow: stream.connected ? "0 0 8px var(--jp-accent)" : "none",
+            }}
+          />
+        </div>
+        <ul className="divide-y" style={{ borderColor: "var(--jp-border)" }}>
+          {items.slice(0, Math.min(max, 8)).map((w) => (
+            <li
+              key={w.id}
+              className={cn(
+                "flex items-center gap-3 px-4 py-2.5",
+                w.fresh && "animate-pulse"
+              )}
+              style={{ borderColor: "var(--jp-border)" }}
+            >
+              {config?.showFlag !== false && (
+                <span className="text-base leading-none shrink-0">
+                  {flagEmoji(w.country)}
+                </span>
+              )}
+              <span
+                className="truncate text-sm font-medium flex-1"
+                style={{ color: "var(--jp-text)" }}
+              >
+                {display(w.displayName)}
+              </span>
+              <span
+                className="text-sm font-semibold tabular shrink-0"
+                style={{ color: "var(--jp-accent)" }}
+              >
+                <RollingNumber
+                  value={w.winAmount}
+                  currency={effCurrency}
+                  locale={effLocale}
+                  decimals={0}
+                />
+              </span>
+            </li>
+          ))}
+          {items.length === 0 && (
+            <li
+              className="px-4 py-6 text-center text-xs"
+              style={{ color: "var(--jp-muted)" }}
+            >
+              Waiting for the first win…
+            </li>
+          )}
+        </ul>
+      </ThemeScope>
+    );
+  }
+
+  if (mode === "bar") {
+    // Dense, flat horizontal strip — no pill, no leading icon, no fade
+    // masks. Built to drop into an existing top/bottom bar that already
+    // supplies its own chrome. Matches the minimal "green bar" look.
+    return (
+      <ThemeScope
+        tokens={theme}
+        className={cn("relative overflow-hidden w-full", className)}
+        style={{
+          background:
+            "linear-gradient(90deg, oklch(from var(--jp-card) l c h / 98%), oklch(from var(--jp-card-2) l c h / 98%))",
+          borderTop: "1px solid var(--jp-border)",
+          borderBottom: "1px solid var(--jp-border)",
+        }}
+      >
+        <div className="relative flex items-center py-2.5">
+          <div className="jp-marquee flex items-center gap-6 min-w-max px-6">
+            {marqueeList.map((w, idx) => (
+              <span
+                key={`${w.id}-${idx}`}
+                className={cn(
+                  "flex items-center gap-1.5 text-sm tabular whitespace-nowrap",
+                  w.fresh && "animate-pulse"
+                )}
+                style={{ color: "var(--jp-text)" }}
+              >
+                {config?.showFlag !== false && (
+                  <span className="text-base leading-none">
+                    {flagEmoji(w.country)}
+                  </span>
+                )}
+                <b className="font-semibold">{display(w.displayName)}</b>
+                <span style={{ color: "var(--jp-muted)" }}>won</span>
+                <span
+                  style={{ color: "var(--jp-accent)" }}
+                  className="font-bold"
+                >
+                  <RollingNumber
+                    value={w.winAmount}
+                    currency={effCurrency}
+                    locale={effLocale}
+                    decimals={0}
+                  />
+                </span>
+                <span
+                  aria-hidden
+                  className="ml-4 inline-block size-1 rounded-full"
+                  style={{ background: "var(--jp-muted)", opacity: 0.4 }}
+                />
+              </span>
+            ))}
+          </div>
+        </div>
+      </ThemeScope>
+    );
+  }
+
   if (mode === "toast") {
     const it = items[toastIdx];
     return (

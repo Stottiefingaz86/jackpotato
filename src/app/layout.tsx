@@ -21,7 +21,7 @@ const sora = Sora({
 });
 
 export const metadata: Metadata = {
-  title: "Jackpotato — Flexible. Powerful. Your jackpot engine.",
+  title: "TurboPot — Flexible. Powerful. Your jackpot engine.",
   description:
     "Multi-tenant jackpot platform with real-time accumulation, white-label widgets, and sandbox-ready tooling. Built for online casinos and operators.",
 };

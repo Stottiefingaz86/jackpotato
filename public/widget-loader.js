@@ -1,10 +1,10 @@
 /**
- * Jackpotato Widget Loader
+ * TurboPot Widget Loader
  * --------------------------------------------
  * Drop this on any page to render a configured jackpot widget:
  *
  *   <div data-jackpot-widget="wdg_123"></div>
- *   <script async src="https://jackpotato.app/widget-loader.js"
+ *   <script async src="https://turbopot.app/widget-loader.js"
  *           data-api-key="pk_live_••••"></script>
  *
  * Internally it mounts an iframe to /embed/<widgetId> so the widget is

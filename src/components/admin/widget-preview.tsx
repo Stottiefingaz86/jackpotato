@@ -5,6 +5,11 @@ import { HeroJackpotBanner } from "@/components/widgets/hero-jackpot-banner";
 import { MustDropMeter } from "@/components/widgets/must-drop-meter";
 import { RecentWinnerTicker } from "@/components/widgets/recent-winner-ticker";
 import { GameCardBadge } from "@/components/widgets/game-card-badge";
+import { LeaderboardWidget } from "@/components/widgets/leaderboard";
+import { WinnerSpotlightWidget } from "@/components/widgets/winner-spotlight";
+import { JackpotOdometer } from "@/components/widgets/jackpot-odometer";
+import { LiveActivityFeed } from "@/components/widgets/live-activity-feed";
+import { JackpotTiers } from "@/components/widgets/jackpot-tiers";
 import { ThemeScope } from "@/components/widgets/theme-scope";
 import type { LiveCampaign } from "@/components/widgets/shared";
 import type { ThemeTokens, Widget, JackpotWin } from "@/lib/types";
@@ -45,6 +50,14 @@ export function WidgetPreview({
             config={widget.config}
           />
         );
+      case "tier_cards":
+        return (
+          <JackpotTiers
+            live={live}
+            theme={theme}
+            config={widget.config}
+          />
+        );
       case "must_drop_meter":
         return (
           <MustDropMeter
@@ -60,6 +73,26 @@ export function WidgetPreview({
             theme={theme}
             config={widget.config}
           />
+        );
+      case "leaderboard":
+        return (
+          <div className="max-w-md">
+            <LeaderboardWidget
+              initial={winners}
+              theme={theme}
+              config={widget.config}
+            />
+          </div>
+        );
+      case "winner_spotlight":
+        return (
+          <div className="max-w-xl">
+            <WinnerSpotlightWidget
+              initial={winners}
+              theme={theme}
+              config={widget.config}
+            />
+          </div>
         );
       case "game_badge":
         return (
@@ -85,6 +118,24 @@ export function WidgetPreview({
                 </div>
               </div>
             ))}
+          </div>
+        );
+      case "odometer":
+        return (
+          <JackpotOdometer
+            live={live}
+            theme={theme}
+            config={widget.config}
+          />
+        );
+      case "activity_feed":
+        return (
+          <div className="max-w-sm">
+            <LiveActivityFeed
+              initial={winners}
+              theme={theme}
+              config={widget.config}
+            />
           </div>
         );
     }

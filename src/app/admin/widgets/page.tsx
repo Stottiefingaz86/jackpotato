@@ -25,9 +25,14 @@ import { WidgetCardPreview } from "@/components/admin/widget-card-preview";
 const WIDGET_LABELS: Record<WidgetType, { label: string; icon: string }> = {
   sticky: { label: "Sticky", icon: "🪧" },
   hero: { label: "Hero banner", icon: "✨" },
+  tier_cards: { label: "Tier cards", icon: "🎯" },
   must_drop_meter: { label: "Must-drop meter", icon: "⏱" },
   winner_ticker: { label: "Winner ticker", icon: "🏆" },
   game_badge: { label: "Game card badge", icon: "💎" },
+  leaderboard: { label: "Leaderboard", icon: "👑" },
+  winner_spotlight: { label: "Winner spotlight", icon: "🌟" },
+  odometer: { label: "Odometer", icon: "🚀" },
+  activity_feed: { label: "Activity feed", icon: "📡" },
 };
 
 export default async function WidgetsPage() {
@@ -91,10 +96,10 @@ export default async function WidgetsPage() {
                   <div
                     className="relative overflow-hidden rounded-xl border border-border/60 bg-background/40"
                     style={{
-                      minHeight:
+                      height:
                         w.type === "winner_ticker"
-                          ? 80
-                          : w.type === "sticky"
+                          ? 120
+                          : w.type === "sticky" || w.type === "leaderboard"
                             ? 320
                             : 220,
                     }}
