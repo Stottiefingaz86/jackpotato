@@ -18,13 +18,20 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
+        // Premium "jackpot" gradient CTA — same recipe as the hero Spin-to-win
+        // button. Use with size `xl` for the landing hero, `lg` elsewhere.
+        jackpot:
+          "relative text-white font-semibold shine ring-0 shadow-[0_14px_38px_-14px_oklch(from_var(--jp-primary)_l_c_h/60%),inset_0_1px_0_oklch(1_0_0/28%)] [background:linear-gradient(90deg,oklch(from_var(--jp-primary)_l_c_h)_0%,oklch(from_var(--jp-secondary)_l_c_h)_55%,oklch(from_var(--jp-accent)_l_c_h)_100%)] [text-shadow:0_1px_2px_oklch(0_0_0/35%)] hover:brightness-110 transition-[filter,transform] hover:-translate-y-px",
+        "jackpot-outline":
+          "relative text-foreground font-semibold border-2 border-transparent bg-card/30 backdrop-blur-sm [background-clip:padding-box,border-box] [background-origin:padding-box,border-box] shadow-[0_10px_28px_-14px_oklch(from_var(--jp-primary)_l_c_h/45%)] [background:linear-gradient(oklch(from_var(--jp-bg)_l_c_h/60%),oklch(from_var(--jp-bg)_l_c_h/60%))_padding-box,linear-gradient(90deg,oklch(from_var(--jp-primary)_l_c_h),oklch(from_var(--jp-secondary)_l_c_h),oklch(from_var(--jp-accent)_l_c_h))_border-box] hover:brightness-110 transition-[filter,transform] hover:-translate-y-px",
       },
       size: {
         default:
           "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
         xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
         sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
-        lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+        lg: "h-11 gap-2 px-5 text-sm has-data-[icon=inline-end]:pr-3.5 has-data-[icon=inline-start]:pl-3.5 [&_svg:not([class*='size-'])]:size-[1.125rem]",
+        xl: "h-12 gap-2 px-7 text-base font-semibold has-data-[icon=inline-end]:pr-5 has-data-[icon=inline-start]:pl-5 [&_svg:not([class*='size-'])]:size-5",
         icon: "size-8",
         "icon-xs":
           "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
@@ -44,12 +51,20 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  nativeButton,
+  render,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  // When composing via the `render` prop (e.g. Next.js <Link>), the resulting
+  // DOM element is no longer a <button>, so opt out of native button semantics
+  // to avoid Base UI dev warnings.
+  const shouldBeNative = nativeButton ?? render == null
   return (
     <ButtonPrimitive
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      nativeButton={shouldBeNative}
+      render={render}
       {...props}
     />
   )
