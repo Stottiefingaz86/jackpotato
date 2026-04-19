@@ -24,11 +24,12 @@ export function TenantSwitcher({
   return (
     <Select
       value={currentId}
-      onValueChange={(v) =>
+      onValueChange={(v) => {
+        if (typeof v !== "string") return;
         start(async () => {
           await switchTenant(v);
-        })
-      }
+        });
+      }}
     >
       <SelectTrigger className="w-full" data-busy={isPending ? "true" : undefined}>
         <Building2 className="size-4" data-icon="inline-start" />

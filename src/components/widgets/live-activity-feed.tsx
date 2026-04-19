@@ -100,7 +100,7 @@ export function LiveActivityFeed({
       kind: "win",
       id: `seed-${w.id}`,
       ts: w.wonAt,
-      playerDisplay: w.playerDisplay,
+      playerDisplay: w.displayName,
       country: w.country,
       winAmount: w.winAmount,
     }));

@@ -16,13 +16,12 @@ import {
   getTiersForCampaign,
   store,
 } from "@/lib/data/store";
-import { buildLiveCampaign, buildThemeById } from "@/lib/public";
+import { buildLiveCampaign } from "@/lib/public";
 import { Zap, FlaskConical } from "lucide-react";
 
 export default async function SandboxPage() {
   const tenantId = await getCurrentTenantId();
   const campaigns = getCampaignsForTenant(tenantId);
-  const theme = buildThemeById("thm_neon_midnight")!;
 
   return (
     <>
@@ -93,8 +92,8 @@ export default async function SandboxPage() {
                 <LiveBalanceCard
                   key={c.id}
                   live={live}
+                  status={c.status}
                   href={`/admin/campaigns/${c.id}`}
-                  theme={theme}
                 />
               );
             })}

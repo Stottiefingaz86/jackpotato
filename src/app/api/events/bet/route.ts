@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       "stakeAmount",
       "currency",
     ] as const
-  ).filter((k) => (body as Record<string, unknown>)[k] == null);
+  ).filter((k) => (body as unknown as Record<string, unknown>)[k] == null);
   if (missing.length) {
     return NextResponse.json(
       { error: "missing_fields", fields: missing },

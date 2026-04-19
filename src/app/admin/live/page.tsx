@@ -4,12 +4,11 @@ import { LiveFeed } from "@/components/admin/live-feed";
 import { LiveBalanceCard } from "@/components/admin/live-balance-card";
 import { getCurrentTenantId } from "@/lib/session";
 import { getCampaignsForTenant } from "@/lib/data/store";
-import { buildLiveCampaign, buildThemeById } from "@/lib/public";
+import { buildLiveCampaign } from "@/lib/public";
 
 export default async function LiveMonitorPage() {
   const tenantId = await getCurrentTenantId();
   const campaigns = getCampaignsForTenant(tenantId);
-  const theme = buildThemeById("thm_neon_midnight")!;
 
   return (
     <>
@@ -29,8 +28,8 @@ export default async function LiveMonitorPage() {
               <LiveBalanceCard
                 key={c.id}
                 live={live}
+                status={c.status}
                 href={`/admin/campaigns/${c.id}`}
-                theme={theme}
               />
             );
           })}

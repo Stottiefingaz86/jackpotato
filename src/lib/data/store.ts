@@ -180,7 +180,6 @@ if (!store.raffleWinners) store.raffleWinners = [...seedRaffleWinners];
     rewrite(store.themes);
     rewrite(store.campaigns);
     rewrite(store.widgets);
-    rewrite(store.placements);
     rewrite(store.apiKeys);
     rewrite(store.crates);
     rewrite(store.raffles);

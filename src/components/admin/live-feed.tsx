@@ -41,8 +41,10 @@ function buildRows(events: RealtimeEvent[], limit: number): FeedRow[] {
       label = `Campaign ${e.campaignId} paused`;
     } else if (e.type === "campaign.resumed") {
       label = `Campaign ${e.campaignId} resumed`;
-    } else {
+    } else if (e.type === "widget.updated") {
       label = `Widget ${e.widgetId} updated`;
+    } else {
+      label = "event";
     }
     return { key, timestamp: e.timestamp, kind: e.type, label };
   });

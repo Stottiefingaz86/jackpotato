@@ -65,7 +65,7 @@ const RARITY: Record<
   },
 };
 
-const PRIZE_ICON: Record<CratePrizeType, React.ComponentType<{ className?: string }>> = {
+const PRIZE_ICON: Record<CratePrizeType, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
   cash: Coins,
   freespins: Sparkles,
   freebet: Dice5,

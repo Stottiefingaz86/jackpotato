@@ -70,8 +70,8 @@ export function ContributionChart({
                 fontSize: 12,
               }}
               labelStyle={{ color: "oklch(1 0 0 / 70%)" }}
-              formatter={(value: number, name) => [
-                `${currency === "EUR" ? "€" : currency === "GBP" ? "£" : "$"}${value.toLocaleString()}`,
+              formatter={(value, name) => [
+                `${currency === "EUR" ? "€" : currency === "GBP" ? "£" : "$"}${Number(value ?? 0).toLocaleString()}`,
                 name,
               ]}
             />
