@@ -15,6 +15,37 @@ import type { LiveCampaign } from "@/components/widgets/shared";
 import type { JackpotWin, ThemeTokens, Widget } from "@/lib/types";
 
 /**
+ * Centers a widget inside a fixed-height preview frame. The widget is
+ * rendered at its natural size inside an oversized child box and then
+ * transformed down with `scale()`. Because transforms don't affect layout,
+ * the inner box is deliberately sized to `100/scale %` so the rendered
+ * result fills the frame without leaving whitespace.
+ */
+function ScaledFrame({
+  height,
+  scale,
+  children,
+}: {
+  height: number;
+  scale: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="relative w-full overflow-hidden" style={{ height }}>
+      <div
+        className="absolute left-1/2 top-1/2"
+        style={{
+          transform: `translate(-50%, -50%) scale(${scale})`,
+          width: `${100 / scale}%`,
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/**
  * A compact preview used in the admin widgets grid. Each widget is rendered
  * at a reasonable mini scale so operators can scan the whole catalog visually.
  */
@@ -31,57 +62,27 @@ export function WidgetCardPreview({
 }) {
   switch (widget.type) {
     case "hero":
-      // The hero banner is a large surface. We scale the unscaled element to
-      // fit the 220px preview slot. `transform: scale` doesn't shrink layout
-      // box, so wrap it in a fixed-height overflow-hidden frame and absolutely
-      // position the scaled child so the outer Card stays compact.
       return (
-        <div className="relative h-[220px] w-full overflow-hidden">
-          <div
-            className="absolute inset-0 origin-top-left"
-            style={{ transform: "scale(0.62)", width: "161.3%" }}
-          >
-            <HeroJackpotBanner
-              live={live}
-              theme={theme}
-              compact
-              config={{ ...widget.config, showTiers: false }}
-            />
-          </div>
-        </div>
+        <ScaledFrame height={220} scale={0.62}>
+          <HeroJackpotBanner
+            live={live}
+            theme={theme}
+            compact
+            config={{ ...widget.config, showTiers: false }}
+          />
+        </ScaledFrame>
       );
     case "tier_cards":
-      // Tier strip — shrink slightly so all 3 cards fit inside the compact
-      // preview frame without horizontal overflow.
       return (
-        <div className="relative h-[220px] w-full overflow-hidden p-3">
-          <div
-            className="origin-top-left"
-            style={{ transform: "scale(0.7)", width: "143%" }}
-          >
-            <JackpotTiers
-              live={live}
-              theme={theme}
-              config={widget.config}
-            />
-          </div>
-        </div>
+        <ScaledFrame height={220} scale={0.62}>
+          <JackpotTiers live={live} theme={theme} config={widget.config} />
+        </ScaledFrame>
       );
     case "must_drop_meter":
-      // Meter is shorter; scale lightly so the whole bar + label row fit.
       return (
-        <div className="relative h-[220px] w-full overflow-hidden p-3">
-          <div
-            className="origin-top-left"
-            style={{ transform: "scale(0.9)", width: "111.2%" }}
-          >
-            <MustDropMeter
-              live={live}
-              theme={theme}
-              config={widget.config}
-            />
-          </div>
-        </div>
+        <ScaledFrame height={220} scale={0.62}>
+          <MustDropMeter live={live} theme={theme} config={widget.config} />
+        </ScaledFrame>
       );
     case "sticky":
       return (
@@ -131,13 +132,13 @@ export function WidgetCardPreview({
       );
     case "winner_spotlight":
       return (
-        <div className="relative h-[220px] w-full overflow-hidden p-3">
+        <ScaledFrame height={220} scale={0.7}>
           <WinnerSpotlightWidget
             initial={winners}
             theme={theme}
             config={widget.config}
           />
-        </div>
+        </ScaledFrame>
       );
     case "odometer":
       return (

@@ -22,17 +22,17 @@ import { Plus, Code2, Settings2 } from "lucide-react";
 import type { WidgetType } from "@/lib/types";
 import { WidgetCardPreview } from "@/components/admin/widget-card-preview";
 
-const WIDGET_LABELS: Record<WidgetType, { label: string; icon: string }> = {
-  sticky: { label: "Sticky", icon: "🪧" },
-  hero: { label: "Hero banner", icon: "✨" },
-  tier_cards: { label: "Tier cards", icon: "🎯" },
-  must_drop_meter: { label: "Must-drop meter", icon: "⏱" },
-  winner_ticker: { label: "Winner ticker", icon: "🏆" },
-  game_badge: { label: "Game card badge", icon: "💎" },
-  leaderboard: { label: "Leaderboard", icon: "👑" },
-  winner_spotlight: { label: "Winner spotlight", icon: "🌟" },
-  odometer: { label: "Odometer", icon: "🚀" },
-  activity_feed: { label: "Activity feed", icon: "📡" },
+const WIDGET_LABELS: Record<WidgetType, string> = {
+  sticky: "Sticky",
+  hero: "Hero banner",
+  tier_cards: "Tier cards",
+  must_drop_meter: "Must-drop meter",
+  winner_ticker: "Winner ticker",
+  game_badge: "Game card badge",
+  leaderboard: "Leaderboard",
+  winner_spotlight: "Winner spotlight",
+  odometer: "Odometer",
+  activity_feed: "Activity feed",
 };
 
 export default async function WidgetsPage() {
@@ -70,21 +70,22 @@ export default async function WidgetsPage() {
               className="group relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-[0_30px_80px_-40px_rgba(168,85,247,0.4)]"
             >
               <CardHeader className="relative pb-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-2xl">{WIDGET_LABELS[w.type].icon}</span>
-                    <div className="min-w-0">
-                      <CardTitle className="truncate text-base">{w.name}</CardTitle>
-                      <CardDescription className="flex items-center gap-1.5 truncate">
-                        <span>{WIDGET_LABELS[w.type].label}</span>
-                        <span>·</span>
-                        <span className="truncate">{brand?.name ?? ""}</span>
-                      </CardDescription>
-                    </div>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="truncate text-base">{w.name}</CardTitle>
+                    <CardDescription className="mt-0.5 flex items-center gap-1.5 truncate text-xs">
+                      <span>{WIDGET_LABELS[w.type]}</span>
+                      {brand?.name ? (
+                        <>
+                          <span className="opacity-60">·</span>
+                          <span className="truncate">{brand.name}</span>
+                        </>
+                      ) : null}
+                    </CardDescription>
                   </div>
                   <Badge
                     variant={w.status === "live" ? "secondary" : "outline"}
-                    className="capitalize shrink-0"
+                    className="shrink-0 capitalize tracking-wide"
                   >
                     {w.status}
                   </Badge>
