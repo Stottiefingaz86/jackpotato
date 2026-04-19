@@ -315,12 +315,26 @@ export function RecentWinnerTicker({
         className
       )}
       style={{
-        borderColor: "var(--jp-border)",
-        background:
-          "linear-gradient(90deg, oklch(from var(--jp-card) l c h / 92%), oklch(from var(--jp-card-2) l c h / 92%))",
-        boxShadow: "var(--jp-shadow)",
+        borderColor: "oklch(from var(--jp-primary) l c h / 22%)",
+        background: [
+          "radial-gradient(140% 180% at 0% 50%, oklch(from var(--jp-primary) l c h / 22%), transparent 55%)",
+          "radial-gradient(140% 180% at 100% 50%, oklch(from var(--jp-accent) l c h / 18%), transparent 55%)",
+          "linear-gradient(180deg, oklch(from var(--jp-card) l c h / 94%), oklch(from var(--jp-card-2) l c h / 94%))",
+        ].join(","),
+        boxShadow:
+          "0 10px 30px -18px oklch(from var(--jp-primary) l c h / 55%), inset 0 1px 0 oklch(1 0 0 / 6%), inset 0 -1px 0 oklch(0 0 0 / 25%)",
       }}
     >
+      {/* Soft diagonal sheen on top — just enough depth to stop the bar
+          reading as a flat blue block. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-full"
+        style={{
+          background:
+            "linear-gradient(180deg, oklch(1 0 0 / 5%), transparent 35%)",
+        }}
+      />
       {/* Fade masks on edges for a cinematic look */}
       <div
         aria-hidden
