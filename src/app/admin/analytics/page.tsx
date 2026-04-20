@@ -72,8 +72,8 @@ export default async function AnalyticsPage() {
   return (
     <>
       <PageHeader
-        title="Analytics"
-        description="Contribution and payout trends across your jackpots. Data is synthetic in this showcase — wire to your warehouse for production."
+        title="Jackpots analytics"
+        description="Contribution and payout trends across every jackpot campaign. Data is synthetic in this showcase — wire to your warehouse for production."
       />
 
       <div className="mb-6 grid gap-4 md:grid-cols-4">

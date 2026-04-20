@@ -8,8 +8,15 @@ import {
   Wand2,
   ShieldCheck,
   Infinity as InfinityIcon,
-  Globe,
   Package,
+  Ticket,
+  Gift,
+  Flame,
+  Target,
+  Crown,
+  Medal,
+  Layers,
+  Activity,
 } from "lucide-react";
 import {
   Accordion,
@@ -23,16 +30,9 @@ import { HeroJackpotBanner } from "@/components/widgets/hero-jackpot-banner";
 import { LiveTile } from "@/components/marketing/live-tile";
 import { RecentWinnerTicker } from "@/components/widgets/recent-winner-ticker";
 import { StickyJackpotWidget } from "@/components/widgets/sticky-jackpot-widget";
-import { CrateCard } from "@/components/crates/crate-card";
-import { RaffleCard } from "@/components/raffles/raffle-card";
-import { RafflePlayWidget } from "@/components/raffles/raffle-play-widget";
-import { Ticket } from "lucide-react";
 import { buildLiveCampaign, buildThemeById } from "@/lib/public";
-import {
-  getCratesForTenant,
-  getRafflesForTenant,
-  getRecentWinners,
-} from "@/lib/data/store";
+import { getRecentWinners } from "@/lib/data/store";
+import { cn } from "@/lib/utils";
 
 export default function LandingPage() {
   const megaLive = buildLiveCampaign("cmp_mega");
@@ -43,15 +43,6 @@ export default function LandingPage() {
   const sunset = buildThemeById("thm_crypto_sunset")!;
   const classic = buildThemeById("thm_casino_classic")!;
   const winners = getRecentWinners(20);
-  const crates = getCratesForTenant("tnt_turbopot").filter(
-    (c) => c.status === "live"
-  );
-  const featuredCrate =
-    crates.find((c) => c.rarity === "legendary") ?? crates[0];
-  const raffles = getRafflesForTenant("tnt_turbopot")
-    .filter((r) => r.status === "live")
-    .slice(0, 3);
-  const featuredRaffle = raffles[0];
 
   return (
     <div className="flex flex-col">
@@ -99,15 +90,18 @@ export default function LandingPage() {
               className="size-1.5 rounded-full bg-primary"
               data-icon="inline-start"
             />
-            Live platform · real-time jackpot engine
+            Jackpots + Rewards · one realtime engine
           </Badge>
           <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-semibold leading-[1.02] tracking-tight max-w-4xl">
-            <span className="block">Flexible.</span>
-            <span className="block">Powerful.</span>
-            <span className="block gradient-text">Your jackpot engine.</span>
+            <span className="block">Jackpots.</span>
+            <span className="block">Rewards.</span>
+            <span className="block gradient-text">One engagement engine.</span>
           </h1>
           <p className="max-w-2xl text-lg text-muted-foreground">
-            Launch custom, scalable jackpots across any gaming vertical. TurboPot is a next-gen jackpot management system for online casinos — seamlessly integrated, highly profitable, and designed to boost player engagement on every spin.
+            Progressive jackpots and rank-driven rewards on a single realtime
+            engine. Launch multi-brand campaigns, segment players by VIP tier,
+            and compound session length, retention and LTV across every
+            vertical — with nothing to glue together.
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <Button
@@ -175,30 +169,32 @@ export default function LandingPage() {
         <div className="flex flex-col gap-4 mb-10 max-w-3xl">
           <Badge variant="outline" className="rounded-full w-fit">How it works</Badge>
           <h2 className="font-display text-3xl sm:text-4xl font-semibold leading-tight">
-            Powerful jackpot software. Maximizing casino revenue.
+            One bet event. Every engagement format.
           </h2>
           <p className="text-muted-foreground">
-            Configure, launch, and monitor jackpots in minutes. Increase player retention and drive up to 30% more revenue with smarter engagement tools.
+            Jackpots, crates, raffles, ranks, races — all driven by the same
+            ingestion pipeline, admin shell, and theme system. Configure once.
+            Scope per brand, vertical or VIP tier. Ship without redeploys.
           </p>
         </div>
         <div className="grid gap-5 md:grid-cols-3">
           {[
             {
               num: "01",
-              title: "Launch Custom Campaigns",
-              desc: "Launch custom jackpots tailored to your games, player base, and engagement strategy. Next-gen pools with complete control and zero hassle.",
+              title: "Configure any campaign",
+              desc: "Progressive pots, must-drop timers, loot crates, ticketed raffles and VIP rank tiers — one admin, one theme system, multi-brand scoping built in.",
               Icon: Wand2,
             },
             {
               num: "02",
-              title: "Real-Time Engagement Insights",
-              desc: "Go live in minutes with a powerful jackpot management system. Advanced tracking dashboards and automated alerts for online casinos.",
+              title: "Ingest every event",
+              desc: "A single bet-event API feeds every widget, leaderboard, crate unlock and rank promotion in realtime — via WebSocket or SSE, sub-50ms.",
               Icon: Gauge,
             },
             {
               num: "03",
-              title: "Make Money, Smarter",
-              desc: "Up to 30% more revenue through smarter jackpot management, targeted incentives, and optimized engagement tools for operators.",
+              title: "Compound LTV",
+              desc: "Combining jackpots with ranked rewards lifts session length, retention and revenue by up to 30%. Segment by tier, A/B test, iterate live.",
               Icon: LineChart,
             },
           ].map(({ num, title, desc, Icon }) => (
@@ -224,13 +220,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Products intro */}
+      {/* Our products — two clearly separated product lines */}
       <section
         id="products"
         className="relative mx-auto w-full max-w-7xl px-6 py-24 sm:py-28"
       >
-        {/* Soft ambient glow behind the intro so the band doesn't feel like a
-         * plain text block between big visual sections. */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-10"
@@ -244,245 +238,345 @@ export default function LandingPage() {
             Our products
           </Badge>
           <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-semibold leading-[1.1] tracking-tight">
-            The complete engagement stack,{" "}
-            <span className="gradient-text">white-labeled for every brand.</span>
+            Two products.{" "}
+            <span className="gradient-text">
+              One engagement engine.
+            </span>
           </h2>
           <p className="max-w-2xl text-muted-foreground text-base sm:text-lg">
-            A progressive jackpot engine, unlockable loot crates, and prize
-            raffles — all sharing the same real-time event bus, admin shell,
-            and embeddable widget system. Mix and match per brand.
+            Run <b>Jackpots</b> for progressive pots and must-drop campaigns.
+            Stack the <b>Rewards Platform</b> on top for crates, raffles, VIP
+            ranks — and soon cash races, challenges and missions. Jackpots or
+            Rewards alone move metrics. Combined, they compound.
           </p>
-          <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
-            {[
-              { label: "Jackpots", icon: Zap },
-              { label: "Crate Drops", icon: Package },
-              { label: "Raffles", icon: Ticket },
-            ].map(({ label, icon: Icon }) => (
-              <span
-                key={label}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card/50 px-3 py-1 text-xs text-muted-foreground"
-              >
-                <Icon className="size-3.5 text-primary" />
-                {label}
+        </div>
+
+        <div className="mt-12 grid gap-6 lg:grid-cols-2">
+          {/* Jackpots product card */}
+          <div className="relative flex flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/40">
+            <div className="flex items-center gap-3 border-b border-border/60 px-6 py-4">
+              <span className="grid size-9 place-items-center rounded-lg bg-primary/15 text-primary">
+                <Zap className="size-4" />
               </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* TurboPot */}
-      <section className="mx-auto w-full max-w-7xl px-6 py-20 sm:py-24">
-        <div className="grid gap-12 lg:gap-16 lg:grid-cols-[1.1fr_1fr] items-center">
-            <div className="flex flex-col gap-4">
-              <Badge className="rounded-full w-fit">TurboPot</Badge>
-              <h3 className="font-display text-2xl sm:text-3xl font-semibold leading-tight">
-                Jackpot engine built for true flexibility, engagement and growth.
-              </h3>
-              <p className="text-muted-foreground">
-                Tired of rigid, outdated jackpot tools? TurboPot delivers a powerful, flexible jackpot solution built for online casinos. Whether you’re running local campaigns or massive network jackpots, launch and manage custom jackpots fast — with full control, seamless integration, and advanced player engagement features.
-              </p>
-              <ul className="grid grid-cols-2 gap-3 mt-2">
-                {[
-                  { Icon: Zap, t: "Ultimate Flexibility", d: "Multiple tiers, triggers and themes — no downtime." },
-                  { Icon: InfinityIcon, t: "Multi-Brand", d: "Run jackpots across games, brands, and networks." },
-                  { Icon: Gauge, t: "Realtime Insights", d: "Track performance live with actionable analytics." },
-                  { Icon: Trophy, t: "Built to boost revenue", d: "Convert, retain, and maximize profits." },
-                ].map(({ Icon, t, d }) => (
-                  <li key={t} className="flex items-start gap-3 rounded-xl border border-border/60 bg-card/40 p-3">
-                    <Icon className="text-primary size-4 mt-0.5" />
-                    <div>
-                      <span className="font-medium">{t}</span>
-                      <p className="text-xs text-muted-foreground">{d}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              <Button
-                render={
-                  <Link href="/admin/campaigns">
-                    Explore TurboPot <ArrowRight data-icon="inline-end" />
-                  </Link>
-                }
-                variant="outline"
-                size="lg"
-                className="rounded-full w-fit mt-2"
-              />
-            </div>
-            {megaLive ? (
-              <HeroJackpotBanner
-                live={megaLive}
-                theme={neon}
-                config={{
-                  headline: "Mega Drop Network",
-                  subheadline: "One unstoppable progressive jackpot.",
-                  ctaLabel: "Spin to win",
-                  ctaUrl: "#",
-                  showTiers: false,
-                  animationLevel: "full",
-                  pulse: true,
-                }}
-              />
-            ) : null}
-        </div>
-      </section>
-
-      {/* Divider */}
-      <div className="mx-auto w-full max-w-7xl px-6">
-        <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
-      </div>
-
-      {/* Crate Drops */}
-      <section className="mx-auto w-full max-w-7xl px-6 py-20 sm:py-24">
-        <div className="grid gap-12 lg:gap-16 lg:grid-cols-[1fr_1.1fr] items-center">
-            {featuredCrate ? (
-              <div className="mx-auto w-full max-w-sm">
-                <CrateCard crate={featuredCrate} />
+              <div className="flex flex-col leading-tight">
+                <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                  Product · TurboPot
+                </span>
+                <span className="font-display text-lg font-semibold">
+                  Jackpot Engine
+                </span>
               </div>
-            ) : null}
-            <div className="flex flex-col gap-4">
-              <Badge className="rounded-full w-fit" variant="secondary">
-                <Package data-icon="inline-start" />
-                Crate Drops
-              </Badge>
-              <h3 className="font-display text-2xl sm:text-3xl font-semibold leading-tight">
-                Unlockable loot crates that keep every spin thrilling.
-              </h3>
-              <p className="text-muted-foreground">
-                Crate Drops turn gameplay into a loop of anticipation. Players unlock crates by betting, spinning, or hitting streaks — then pop them open for cash, free spins, free bets and deposit matches. Operators tune rarity, prize pools and trigger conditions live without redeploying a single game.
-              </p>
-              <ul className="grid grid-cols-2 gap-3 mt-2">
-                {[
-                  { Icon: Package, t: "5 rarity tiers", d: "Common → Mythic, each with its own rewards." },
-                  { Icon: Zap, t: "Flexible triggers", d: "Stake, spins, streaks, or manual VIP drops." },
-                  { Icon: Trophy, t: "Real prizes", d: "Cash, free spins, free bets, bonuses, multipliers." },
-                  { Icon: ShieldCheck, t: "Operator controls", d: "Expected value, daily caps, brand scoping." },
-                ].map(({ Icon, t, d }) => (
-                  <li key={t} className="flex items-start gap-3 rounded-xl border border-border/60 bg-card/40 p-3">
-                    <Icon className="text-primary size-4 mt-0.5" />
-                    <div>
-                      <span className="font-medium">{t}</span>
-                      <p className="text-xs text-muted-foreground">{d}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              <div className="flex items-center gap-2 flex-wrap mt-2">
-                <Button
-                  render={
-                    <Link href="/crates">
-                      Explore crates <ArrowRight data-icon="inline-end" />
-                    </Link>
-                  }
-                  variant="outline"
-                  size="lg"
-                  className="rounded-full w-fit"
-                />
-                <Button
-                  render={
-                    <Link href="/admin/crates">
-                      Configure in admin
-                    </Link>
-                  }
-                  variant="outline"
-                  size="lg"
-                  className="rounded-full w-fit"
-                />
-              </div>
+              <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-primary">
+                Live
+              </span>
             </div>
-        </div>
-
-        {/* Rarity showcase strip */}
-        {crates.length > 0 && (
-          <div className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {crates.slice(0, 4).map((c) => (
-              <CrateCard key={c.id} crate={c} compact />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Divider */}
-      <div className="mx-auto w-full max-w-7xl px-6">
-        <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
-      </div>
-
-      {/* Raffles */}
-      <section
-        id="raffles"
-        className="mx-auto w-full max-w-7xl px-6 py-20 sm:py-24 scroll-mt-24"
-      >
-        <div className="grid gap-12 lg:gap-16 lg:grid-cols-[1.1fr_1fr] items-center">
-            <div className="flex flex-col gap-4">
-              <Badge className="rounded-full w-fit" variant="secondary">
-                <Ticket data-icon="inline-start" />
-                Raffles
-              </Badge>
-              <h3 className="font-display text-2xl sm:text-3xl font-semibold leading-tight">
-                Ticket-based draws that turn activity into anticipation.
-              </h3>
-              <p className="text-muted-foreground">
-                Raffles reward sustained play with a shot at a showstopper prize. Players earn tickets by betting, depositing, or hitting spin streaks — then everyone watches the countdown together until the draw. Operators set the trigger, ticket caps, prize pool, and brand scoping.
+            <div className="p-6 flex flex-col gap-5">
+              {megaLive ? (
+                <HeroJackpotBanner
+                  live={megaLive}
+                  theme={neon}
+                  compact
+                  config={{
+                    headline: "Mega Drop Network",
+                    subheadline: "One unstoppable progressive jackpot.",
+                    ctaLabel: "Spin to win",
+                    ctaUrl: "#",
+                    showTiers: false,
+                    animationLevel: "full",
+                    pulse: true,
+                  }}
+                />
+              ) : null}
+              <p className="text-sm text-muted-foreground">
+                Progressive pots, tiered drops, must-drop timers and network
+                jackpots. Rank-gated payouts, multi-currency, multi-brand —
+                fully instrumented from first bet to settlement.
               </p>
-              <ul className="grid grid-cols-2 gap-3 mt-2">
+              <ul className="grid grid-cols-2 gap-2">
                 {[
-                  { Icon: Ticket, t: "Weighted tickets", d: "Earn-per-stake, spins, deposits, or manual." },
-                  { Icon: Trophy, t: "Multi-prize pools", d: "Grand + runner-up tiers with custom values." },
-                  { Icon: Gauge, t: "Live countdown", d: "Urgency built in across every widget surface." },
-                  { Icon: ShieldCheck, t: "Fair by design", d: "Deterministic draws with full audit trail." },
-                ].map(({ Icon, t, d }) => (
-                  <li key={t} className="flex items-start gap-3 rounded-xl border border-border/60 bg-card/40 p-3">
-                    <Icon className="text-primary size-4 mt-0.5" />
-                    <div>
-                      <span className="font-medium">{t}</span>
-                      <p className="text-xs text-muted-foreground">{d}</p>
-                    </div>
+                  { Icon: Zap, t: "4 jackpot tiers" },
+                  { Icon: InfinityIcon, t: "Network + local pots" },
+                  { Icon: Gauge, t: "Must-drop timers" },
+                  { Icon: Crown, t: "Rank-gated wins" },
+                ].map(({ Icon, t }) => (
+                  <li
+                    key={t}
+                    className="flex items-center gap-2 rounded-lg border border-border/60 bg-card/40 px-3 py-2 text-xs"
+                  >
+                    <Icon className="text-primary size-3.5 shrink-0" />
+                    <span className="truncate">{t}</span>
                   </li>
                 ))}
               </ul>
-              <div className="flex items-center gap-2 flex-wrap mt-2">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   render={
-                    <Link href="/admin/raffles">
-                      Configure in admin
+                    <Link href="/jackpots">
+                      Explore Jackpot Engine
                       <ArrowRight data-icon="inline-end" />
                     </Link>
                   }
+                  size="lg"
+                  className="rounded-full"
+                />
+                <Button
+                  render={<Link href="/admin/campaigns">Open admin</Link>}
                   variant="outline"
                   size="lg"
-                  className="rounded-full w-fit"
+                  className="rounded-full"
                 />
               </div>
             </div>
-            <div className="mx-auto w-full max-w-md">
-              <RafflePlayWidget
-                accent={featuredRaffle?.color ?? "#a855f7"}
-                title={featuredRaffle?.name ?? "Try the draw"}
-                prizeLabel={
-                  featuredRaffle?.prizes[0]?.value
-                    ? new Intl.NumberFormat("en-EU", {
-                        style: "currency",
-                        currency: featuredRaffle.prizes[0].currency ?? "EUR",
-                        maximumFractionDigits: 0,
-                      }).format(featuredRaffle.prizes[0].value)
-                    : "€2,500"
-                }
-                prizeSubtitle={
-                  featuredRaffle?.prizes[0]?.label ?? "Grand prize"
-                }
-              />
+          </div>
+
+          {/* Rewards platform product card */}
+          <div className="relative flex flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/40">
+            <div className="flex items-center gap-3 border-b border-border/60 px-6 py-4">
+              <span className="grid size-9 place-items-center rounded-lg bg-primary/15 text-primary">
+                <Gift className="size-4" />
+              </span>
+              <div className="flex flex-col leading-tight">
+                <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                  Product · Rewards Platform
+                </span>
+                <span className="font-display text-lg font-semibold">
+                  Engagement, loyalty & gamification
+                </span>
+              </div>
+              <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-primary">
+                New
+              </span>
             </div>
+            <div className="p-6 flex flex-col gap-5">
+              {/* Format showcase — makes it unambiguous that Rewards is a
+               * PLATFORM of multiple engagement formats. Six themed tiles:
+               * Crate Drops, Raffles, VIP Ranks (live) and Cash Races,
+               * Challenges, Missions (shipping). Each has its own accent so
+               * operators can see the full product breadth at a glance. */}
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {[
+                  {
+                    Icon: Package,
+                    label: "Crate Drops",
+                    tagline: "Loot unlocks",
+                    state: "Live",
+                    gradient:
+                      "radial-gradient(110% 120% at 10% 0%, oklch(0.55 0.22 300 / 55%), transparent 60%), linear-gradient(135deg, oklch(0.22 0.06 300), oklch(0.16 0.04 285))",
+                    accent: "oklch(0.78 0.2 300)",
+                  },
+                  {
+                    Icon: Ticket,
+                    label: "Raffles",
+                    tagline: "Ticket draws",
+                    state: "Live",
+                    gradient:
+                      "radial-gradient(110% 120% at 10% 0%, oklch(0.68 0.18 80 / 50%), transparent 60%), linear-gradient(135deg, oklch(0.24 0.05 75), oklch(0.16 0.03 70))",
+                    accent: "oklch(0.85 0.18 85)",
+                  },
+                  {
+                    Icon: Crown,
+                    label: "VIP Ranks",
+                    tagline: "Segmentation spine",
+                    state: "Live",
+                    gradient:
+                      "radial-gradient(110% 120% at 10% 0%, oklch(0.62 0.18 150 / 50%), transparent 60%), linear-gradient(135deg, oklch(0.22 0.06 150), oklch(0.15 0.04 145))",
+                    accent: "oklch(0.8 0.18 155)",
+                  },
+                  {
+                    Icon: Flame,
+                    label: "Cash Races",
+                    tagline: "Leaderboard sprints",
+                    state: "Soon",
+                    gradient:
+                      "radial-gradient(110% 120% at 10% 0%, oklch(0.6 0.24 20 / 45%), transparent 60%), linear-gradient(135deg, oklch(0.22 0.06 20), oklch(0.15 0.04 15))",
+                    accent: "oklch(0.75 0.2 25)",
+                  },
+                  {
+                    Icon: Medal,
+                    label: "Challenges",
+                    tagline: "Quests & streaks",
+                    state: "Soon",
+                    gradient:
+                      "radial-gradient(110% 120% at 10% 0%, oklch(0.6 0.2 230 / 45%), transparent 60%), linear-gradient(135deg, oklch(0.22 0.06 225), oklch(0.15 0.04 220))",
+                    accent: "oklch(0.78 0.17 230)",
+                  },
+                  {
+                    Icon: Target,
+                    label: "Missions",
+                    tagline: "XP & progression",
+                    state: "Soon",
+                    gradient:
+                      "radial-gradient(110% 120% at 10% 0%, oklch(0.6 0.16 180 / 45%), transparent 60%), linear-gradient(135deg, oklch(0.22 0.05 180), oklch(0.15 0.03 180))",
+                    accent: "oklch(0.78 0.15 180)",
+                  },
+                ].map(({ Icon, label, tagline, state, gradient, accent }) => (
+                  <div
+                    key={label}
+                    className="relative flex flex-col gap-2 overflow-hidden rounded-xl border border-border/60 p-3"
+                    style={{ background: gradient }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span
+                        className="grid size-8 place-items-center rounded-lg ring-1 ring-white/10"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, oklch(1 0 0 / 8%), oklch(1 0 0 / 2%))",
+                          color: accent,
+                        }}
+                      >
+                        <Icon className="size-4" />
+                      </span>
+                      <span
+                        className={cn(
+                          "rounded-full px-1.5 py-px text-[10px] uppercase tracking-wide",
+                          state === "Live"
+                            ? "bg-white/10 text-white/85"
+                            : "bg-white/5 text-white/55"
+                        )}
+                      >
+                        {state}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex flex-col leading-tight">
+                      <span className="text-sm font-semibold text-white/95">
+                        {label}
+                      </span>
+                      <span className="text-[11px] text-white/60">
+                        {tagline}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-sm text-muted-foreground">
+                Every play feeds one progression spine. Crates, raffles and
+                VIP ranks live today; cash races, challenges and missions
+                next — all targetable by rank, brand and vertical from day
+                one.
+              </p>
+              <ul className="grid grid-cols-2 gap-2">
+                {[
+                  { Icon: Crown, t: "Segment by VIP rank" },
+                  { Icon: Target, t: "Rank-gated rewards" },
+                  { Icon: Trophy, t: "Cross-format XP" },
+                  { Icon: ShieldCheck, t: "Per-brand scoping" },
+                ].map(({ Icon, t }) => (
+                  <li
+                    key={t}
+                    className="flex items-center gap-2 rounded-lg border border-border/60 bg-card/40 px-3 py-2 text-xs"
+                  >
+                    <Icon className="text-primary size-3.5 shrink-0" />
+                    <span className="truncate">{t}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  render={
+                    <Link href="/rewards">
+                      Explore Rewards Platform
+                      <ArrowRight data-icon="inline-end" />
+                    </Link>
+                  }
+                  size="lg"
+                  className="rounded-full"
+                />
+                <Button
+                  render={<Link href="/admin/crates">Open admin</Link>}
+                  variant="outline"
+                  size="lg"
+                  className="rounded-full"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Raffle grid strip */}
-        {raffles.length > 0 && (
-          <div className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {(featuredRaffle ? [featuredRaffle, ...raffles.slice(1, 3)] : raffles.slice(0, 3)).map(
-              (r) => (
-                <RaffleCard key={r.id} raffle={r} compact />
-              )
-            )}
+        {/* Combine them — the 1 + 1 = 3 message made explicit */}
+        <div
+          className="relative mt-10 overflow-hidden rounded-3xl border border-border/70 p-8 sm:p-10"
+          style={{
+            background:
+              "radial-gradient(700px 300px at 0% 0%, oklch(0.72 0.22 300 / 18%), transparent 65%), radial-gradient(700px 300px at 100% 100%, oklch(0.84 0.19 85 / 14%), transparent 65%), linear-gradient(180deg, oklch(0.18 0.025 280 / 85%), oklch(0.15 0.02 275 / 85%))",
+          }}
+        >
+          <div className="grid gap-8 lg:grid-cols-[1.05fr_1fr] items-center">
+            <div className="flex flex-col gap-4">
+              <Badge variant="outline" className="rounded-full w-fit">
+                <Layers data-icon="inline-start" />
+                Jackpots + Rewards
+              </Badge>
+              <h3 className="font-display text-2xl sm:text-3xl font-semibold leading-tight">
+                Combined, they compound.{" "}
+                <span className="gradient-text">
+                  This is the stack players can&apos;t put down.
+                </span>
+              </h3>
+              <p className="text-muted-foreground">
+                Rank-gated must-drops. VIP-only loot crates. Jackpot wins that
+                seed raffle tickets. A single XP spine that crosses every
+                format. Ship it as a bundle, measure it as a system, iterate
+                on it live.
+              </p>
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <Button
+                  render={
+                    <Link href="/admin/campaigns">
+                      Design a combined campaign
+                      <ArrowRight data-icon="inline-end" />
+                    </Link>
+                  }
+                  size="lg"
+                  className="rounded-full"
+                />
+                <Button
+                  render={<Link href="/admin/sandbox">Try the sandbox</Link>}
+                  variant="outline"
+                  size="lg"
+                  className="rounded-full"
+                />
+              </div>
+            </div>
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {[
+                {
+                  Icon: Crown,
+                  t: "Rank-gated must-drops",
+                  d: "Only Gold+ triggers the $100K pot.",
+                },
+                {
+                  Icon: Package,
+                  t: "VIP-only loot crates",
+                  d: "Scope rarities by tier in the admin.",
+                },
+                {
+                  Icon: Ticket,
+                  t: "Jackpot → raffle seeding",
+                  d: "Every pot won auto-grants draw tickets.",
+                },
+                {
+                  Icon: Activity,
+                  t: "Cross-format XP",
+                  d: "One spine powers every progression.",
+                },
+              ].map(({ Icon, t, d }) => (
+                <li
+                  key={t}
+                  className="flex items-start gap-3 rounded-xl border border-border/60 bg-background/30 p-3"
+                >
+                  <span className="grid size-8 place-items-center rounded-lg bg-primary/15 text-primary shrink-0">
+                    <Icon className="size-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium">{t}</div>
+                    <div className="text-xs text-muted-foreground">{d}</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
-        )}
+        </div>
       </section>
 
       {/* Divider */}
@@ -494,10 +588,10 @@ export default function LandingPage() {
       <section className="mx-auto w-full max-w-7xl px-6 py-16">
         <div className="grid gap-8 sm:grid-cols-4 rounded-3xl border border-border bg-card/40 p-6 sm:p-10">
           {[
-            { k: "30%", v: "more revenue with smarter jackpots" },
-            { k: "4", v: "jackpot types supported" },
-            { k: "Realtime", v: "updates via WebSocket and SSE" },
-            { k: "∞", v: "brand and vendor configurations" },
+            { k: "+30%", v: "revenue uplift with the combined stack" },
+            { k: "6", v: "reward formats — 3 live, 3 shipping" },
+            { k: "<50ms", v: "end-to-end event latency, every format" },
+            { k: "∞", v: "brands, verticals and rank tiers per tenant" },
           ].map((s) => (
             <div key={s.v} className="flex flex-col gap-1">
               <span className="font-display text-3xl sm:text-4xl font-semibold gradient-text">
@@ -514,41 +608,47 @@ export default function LandingPage() {
         <div className="text-center flex flex-col items-center gap-3 mb-10">
           <Badge variant="outline" className="rounded-full">FAQ</Badge>
           <h2 className="font-display text-3xl sm:text-4xl font-semibold">
-            Your jackpot questions, answered.
+            Operator questions, answered.
           </h2>
           <p className="text-muted-foreground max-w-2xl">
-            From must-drop mechanics to network jackpots — everything an operator needs to know before going live.
+            From must-drop mechanics to rank-gated rewards — everything an
+            operator needs to know before going live on jackpots, rewards, or
+            both.
           </p>
         </div>
         <Accordion className="w-full">
           {[
             {
               q: "What is TurboPot?",
-              a: "TurboPot is a customizable jackpot management system designed for online casinos, allowing operators to launch flexible jackpots across multiple games, brands, and networks with ease.",
+              a: "TurboPot is a realtime engagement platform for online casinos. Two products — Jackpots (progressive pots, must-drop timers, network pots) and the Rewards Platform (crates, raffles, VIP ranks, and soon cash races, challenges and missions) — run on one ingestion pipeline, one admin shell and one theme system.",
+            },
+            {
+              q: "Why does combining Jackpots + Rewards matter?",
+              a: "Jackpots drive acquisition and peak-moment excitement. Rewards drive return visits and long-term loyalty. Combining them — rank-gated must-drops, VIP-only loot crates, jackpot wins that seed raffle tickets, a single XP spine — is where operators see the biggest revenue and LTV lift. Every format is instrumented as one system, not three vendors glued together.",
+            },
+            {
+              q: "What do VIP Ranks unlock?",
+              a: "Ranks are the segmentation spine of the platform. Every other format — jackpots, crates, raffles, challenges — can be scoped to a rank tier without extra code. Ranks auto-progress from wager activity, feed campaign targeting, and carry a full audit trail for ops and compliance reviews.",
             },
             {
               q: "How do Crate Drops work?",
-              a: "Crate Drops are unlockable loot crates earned through gameplay — betting, spin streaks, wins, or manual VIP awards. Each crate opens to reveal cash, free spins, free bets, deposit matches or multipliers, with operators controlling rarity tiers, prize pools, and expected value.",
+              a: "Crates are unlockable loot earned through gameplay — betting, spin streaks, wins, or manual VIP awards. Each opens to reveal cash, free spins, free bets, deposit matches or multipliers, with operators controlling rarity tiers, prize pools, rank gating and expected value.",
             },
             {
               q: "How are Raffles different from jackpots?",
-              a: "Raffles are fixed-duration, ticket-based draws. Instead of a progressive pool that grows with every spin, players earn tickets through play and the prize is drawn at a scheduled time. Great for weekend marketing pushes, VIP exclusives, and launch events that need a hard deadline.",
-            },
-            {
-              q: "Can I run jackpots across multiple brands?",
-              a: "Yes — you can easily launch network jackpots across different brands and markets from one central management system.",
+              a: "Raffles are fixed-duration, ticket-based draws. Instead of a progressive pool that grows with every spin, players earn tickets through play and the prize is drawn at a scheduled time — perfect for weekend marketing pushes, VIP exclusives, and launch events with a hard deadline.",
             },
             {
               q: "What is a must-drop jackpot?",
-              a: "A must-drop jackpot is a progressive prize that is guaranteed to pay out before reaching a set time or amount, creating urgency and boosting player engagement on casino games.",
+              a: "A must-drop jackpot is a progressive prize guaranteed to pay out before reaching a set time or amount, creating urgency and boosting player engagement. Gate it by VIP rank for a high-tier-only experience.",
             },
             {
-              q: "What is the difference between local and network jackpots?",
-              a: "A local jackpot is exclusive to a single operator or casino brand, while a network jackpot pools contributions from multiple brands to create larger, faster-growing prizes.",
+              q: "Can I run campaigns across multiple brands?",
+              a: "Yes — every format supports per-tenant, per-brand and per-vertical scoping out of the box. Run network jackpots across brands, or keep crates and raffles exclusive to a single brand. All from one admin.",
             },
             {
               q: "Can I customize RTP contributions per jackpot?",
-              a: "Absolutely. TurboPot gives full control over RTP, contribution splits, tiers, triggers, and seeding per jackpot to optimize profitability and campaign strategy.",
+              a: "Absolutely. Full control over RTP, contribution splits, tiers, triggers, seeding and rank gates per jackpot — tune profitability and campaign strategy without redeploying.",
             },
           ].map((f, i) => (
             <AccordionItem key={f.q} value={`item-${i}`}>
@@ -572,7 +672,9 @@ export default function LandingPage() {
             Ready to level up your casino?
           </h2>
           <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
-            Go live with your first jackpot campaign now. Convert more players with the only jackpot engine built with online casinos in mind.
+            Go live with your first jackpot, crate or raffle today — one
+            admin, one engine, every engagement format you&apos;ll ever ship.
+            Built with online casinos in mind.
           </p>
           <div className="mt-6 flex items-center justify-center gap-3 flex-wrap">
             <Button
